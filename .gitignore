@@ -92,3 +92,7 @@ backend/storage/tts/
 # Deploy package and database dump (contain real data) – never commit
 deploy/thct-clinic-deploy.zip
 deploy/thct_clinic_full.sql
+
+# Personal files / unrelated PHP upload script – kept on disk, not part of the project
+uploadfile.php
+uploads/
