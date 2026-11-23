@@ -1,0 +1,156 @@
+.rs-head-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rs-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.rs-stats div {
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+}
+
+.rs-stats b {
+  display: block;
+  font-size: 20px;
+  color: #0f172a;
+}
+
+.rs-stats span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.rs-stats .is-main {
+  border-color: #5ec9bc;
+  background: #f1faf8;
+}
+
+.rs-stats .is-main b {
+  color: #108578;
+}
+
+.rs-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.rs-card {
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.rs-card h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.rs-group {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.rs-group legend {
+  padding: 0 6px;
+  font-weight: 700;
+  color: #108578;
+}
+
+.rs-row {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.rs-row input[type='checkbox'] {
+  justify-self: start;
+  width: 20px;
+  height: 20px;
+}
+
+.rs-kw {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.rs-kw em {
+  font-weight: 400;
+  color: #b45309;
+}
+
+.rs-kw textarea {
+  font-weight: 400;
+  resize: vertical;
+}
+
+.rs-preview {
+  margin-top: 16px;
+}
+
+.rs-preview-form {
+  display: grid;
+  grid-template-columns: 220px 1fr auto;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.rs-item {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.rs-item.is-off {
+  color: #92400e;
+  background: #fffbeb;
+}
+
+.rs-item-head {
+  display: flex;
+  justify-content: space-between;
+}
+
+.rs-score {
+  font-weight: 800;
+  color: #108578;
+}
+
+.rs-item ul {
+  margin: 6px 0;
+  padding-left: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .rs-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .rs-layout,
+  .rs-preview-form {
+    grid-template-columns: 1fr;
+  }
+}

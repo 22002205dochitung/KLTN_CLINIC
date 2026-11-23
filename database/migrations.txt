@@ -1,0 +1,22 @@
+# Thứ tự migration (sau file gốc kltn_clinic.sql). Khi thêm chức năng cần đổi database:
+#   1. tạo file database/<ten>.sql (nên dùng IF NOT EXISTS để chạy lại không lỗi)
+#   2. thêm tên file vào CUỐI danh sách này
+# Trên host, setup-vps.sh chỉ chạy các file chưa từng chạy (ghi lại trong bảng schema_migrations).
+payment_system.sql
+payment_system_fix.sql
+logic_fixes.sql
+bank_transfer.sql
+doctor_leaves.sql
+reviews.sql
+medicines.sql
+queue_calling.sql
+pharmacy_stock.sql
+smart_recommendation.sql
+doctor_shifts.sql
+exam_type_payment_hold.sql
+registration_otp.sql
+doctor_profiles.sql
+more_doctors.sql
+more_doctors_50.sql
+prescription_templates.sql
+booking_code.sql

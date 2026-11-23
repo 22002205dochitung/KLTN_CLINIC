@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './AdminStatistics.css';
+import { API_BASE } from '../../config/api';
+import ReportExport from './ReportExport';
 
 /**
  * AdminStatistics Component
@@ -24,14 +26,22 @@ const AdminStatistics = ({ onBack }) => {
     doctor_id: ''
   });
 
+  // Department / doctor lists for the report filters (use case "Báo cáo thống kê lượt khám")
+  const [catalog, setCatalog] = useState({ departments: [], doctors: [] });
+  useEffect(() => {
+    axios.get(`${API_BASE}/appointments/doctors`)
+      .then((res) => setCatalog({ departments: res.data.departments || [], doctors: res.data.doctors || [] }))
+      .catch(() => {});
+  }, []);
+
   // Fetch dashboard overview
   const fetchDashboardData = async () => {
     try {
       const response = await axios.get(
-        'http://localhost:5000/api/statistics/dashboard',
+        `${API_BASE}/statistics/dashboard`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`
           }
         }
       );
@@ -55,10 +65,10 @@ const AdminStatistics = ({ onBack }) => {
       if (filters.doctor_id) params.append('doctor_id', filters.doctor_id);
 
       const response = await axios.get(
-        `http://localhost:5000/api/statistics/appointments?${params.toString()}`,
+        `${API_BASE}/statistics/appointments?${params.toString()}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`
           }
         }
       );
@@ -82,10 +92,10 @@ const AdminStatistics = ({ onBack }) => {
       if (filters.doctor_id) params.append('doctor_id', filters.doctor_id);
 
       const response = await axios.get(
-        `http://localhost:5000/api/statistics/no-show?${params.toString()}`,
+        `${API_BASE}/statistics/no-show?${params.toString()}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            Authorization: `Bearer ${localStorage.getItem('auth_token')}`
           }
         }
       );
@@ -119,9 +129,12 @@ const AdminStatistics = ({ onBack }) => {
   }, [activeTab, filters]);
 
   const handleFilterChange = (e) => {
+    const { name, value } = e.target;
     setFilters({
       ...filters,
-      [e.target.name]: e.target.value
+      [name]: value,
+      // a doctor belongs to one department: changing the department resets the doctor
+      ...(name === 'department_id' ? { doctor_id: '' } : {})
     });
   };
 
@@ -564,6 +577,8 @@ const AdminStatistics = ({ onBack }) => {
         )}
       </div>
 
+      <ReportExport />
+
       {/* Tabs */}
       <div className="stats-tabs">
         <button 
@@ -606,6 +621,22 @@ const AdminStatistics = ({ onBack }) => {
               value={filters.end_date}
               onChange={handleFilterChange}
             />
+          </div>
+          <div className="filter-group">
+            <label>Chuyên khoa:</label>
+            <select name="department_id" value={filters.department_id} onChange={handleFilterChange}>
+              <option value="">Tất cả</option>
+              {catalog.departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Bác sĩ:</label>
+            <select name="doctor_id" value={filters.doctor_id} onChange={handleFilterChange}>
+              <option value="">Tất cả</option>
+              {catalog.doctors
+                .filter((d) => !filters.department_id || String(d.department_id) === String(filters.department_id))
+                .map((d) => <option key={d.doctor_id} value={d.doctor_id}>{d.full_name}</option>)}
+            </select>
           </div>
           <button className="btn-clear-filters" onClick={clearFilters}>
             🔄 Xóa bộ lọc

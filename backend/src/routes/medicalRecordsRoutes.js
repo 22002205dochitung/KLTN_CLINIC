@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const medicalRecordsController = require('../controllers/medicalRecordsController');
-const { doctorOnly, patientOnly, receptionistOnly, verifyToken } = require('../middleware/authMiddleware');
+const { doctorOnly, patientOnly, receptionistOnly, verifyToken, requireRole } = require('../middleware/authMiddleware');
 
 /**
  * Medical Records Routes
@@ -19,6 +19,9 @@ const { doctorOnly, patientOnly, receptionistOnly, verifyToken } = require('../m
  * Auth: Doctor only
  */
 router.get('/checked-in', doctorOnly, medicalRecordsController.getCheckedInPatients);
+
+// Doctor's patients due for a follow-up visit (tái khám) - must stay above '/:id'
+router.get('/doctor/follow-ups', doctorOnly, medicalRecordsController.getDoctorFollowUps);
 
 /**
  * POST /api/medical-records
@@ -81,6 +84,7 @@ router.get('/:id', verifyToken, medicalRecordsController.getMedicalRecordDetails
  * Get all medical records for a specific patient
  * Auth: Receptionist only
  */
-router.get('/patient/:patientId', receptionistOnly, medicalRecordsController.getPatientRecordsByReceptionist);
+// Staff lookup of a patient's records (front desk, admin, doctors reviewing history)
+router.get('/patient/:patientId', verifyToken, requireRole(['receptionist', 'admin', 'doctor']), medicalRecordsController.getPatientRecordsByReceptionist);
 
 module.exports = router;

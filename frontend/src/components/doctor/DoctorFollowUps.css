@@ -1,0 +1,151 @@
+.fu-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.fu-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fu-filter {
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fu-filter.active {
+  border-color: #108578;
+  background: #108578;
+  color: #fff;
+}
+
+.fu-filter:focus-visible,
+.fu-call:focus-visible {
+  outline: 2px solid #108578;
+  outline-offset: 2px;
+}
+
+.fu-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.fu-range select {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.fu-range-note {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.fu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fu-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #cbd5e1;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.fu-item.is-pending { border-left-color: #f59e0b; }
+.fu-item.is-overdue { border-left-color: #ef4444; background: #fff7f7; }
+.fu-item.is-booked { border-left-color: #3b82f6; }
+.fu-item.is-done { border-left-color: #10b981; }
+
+.fu-date {
+  display: flex;
+  flex-direction: column;
+  min-width: 100px;
+}
+
+.fu-date strong {
+  font-size: 17px;
+  color: #0f172a;
+}
+
+.fu-date span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.fu-item.is-overdue .fu-date span {
+  color: #b91c1c;
+}
+
+.fu-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.fu-name {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.fu-meta {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.fu-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.fu-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fu-chip.is-pending { background: #fef3c7; color: #92400e; }
+.fu-chip.is-overdue { background: #fee2e2; color: #991b1b; }
+.fu-chip.is-booked { background: #dbeafe; color: #1e40af; }
+.fu-chip.is-done { background: #d1fae5; color: #065f46; }
+
+.fu-call {
+  font-size: 13px;
+  font-weight: 700;
+  color: #108578;
+  text-decoration: none;
+}
+
+@media (max-width: 480px) {
+  .fu-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}

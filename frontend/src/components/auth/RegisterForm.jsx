@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import './AuthForms.css';
+import OtpVerify from './OtpVerify';
 
 // Debounce utility function
 const debounce = (func, delay) => {
@@ -12,6 +13,7 @@ const debounce = (func, delay) => {
 };
 
 const RegisterForm = ({ onSuccess, onSwitchToLogin, adminMode = false, preselectedRole = null }) => {
+  const [otpStep, setOtpStep] = useState(null); // { email, otp, message } after registration
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -34,12 +36,13 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, adminMode = false, preselect
   const [passwordStrength, setPasswordStrength] = useState({ score: 0, feedback: [] });
   const { register, error: authError, clearError } = useAuth();
 
-  // Clear auth errors when user starts typing
+  // Clear the server error only when the user edits the form again
+  // (depending on authError itself cleared the message the moment it appeared)
+  const authErrorRef = useRef(authError);
+  authErrorRef.current = authError;
   useEffect(() => {
-    if (authError) {
-      clearError();
-    }
-  }, [formData, authError, clearError]);
+    if (authErrorRef.current) clearError();
+  }, [formData, clearError]);
 
   // Debounced email uniqueness check
   const checkEmailUniqueness = useCallback(
@@ -292,7 +295,11 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, adminMode = false, preselect
       // Clean phone number for API
       registerData.phone = registerData.phone.replace(/[\s\-\(\)\.]/g, '');
       
-      await register(registerData);
+      const result = await register(registerData);
+      if (result && result.requiresOtp) {
+        setOtpStep({ email: result.email, otp: result.otp, message: result.message });
+        return;
+      }
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Registration failed:', error.message);
@@ -325,6 +332,21 @@ const RegisterForm = ({ onSuccess, onSwitchToLogin, adminMode = false, preselect
     if (passwordStrength.score <= 4) return 'Mạnh';
     return 'Rất mạnh';
   };
+
+  if (otpStep) {
+    return (
+      <OtpVerify
+        email={otpStep.email}
+        initialOtp={otpStep.otp}
+        intro="Đăng ký thành công! Nhập mã gồm 6 chữ số vừa được gửi tới"
+        onVerified={() => {
+          // prefill the login form with this e-mail
+          try { localStorage.setItem('rememberedEmail', otpStep.email); } catch (e) { /* ignore */ }
+          if (onSwitchToLogin) onSwitchToLogin();
+        }}
+      />
+    );
+  }
 
   return (
     <div className="auth-form-container">

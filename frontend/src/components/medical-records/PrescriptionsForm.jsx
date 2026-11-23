@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
+import { API_BASE } from '../../config/api';
 import { createPrescriptions } from '../../services/medicalRecordsService';
+import PrescriptionTemplates from './PrescriptionTemplates';
+import SuggestInput from '../common/SuggestInput';
+import INSTRUCTION_PRESETS from './instructionPresets';
 import './MedicalRecords.css';
 
 /**
@@ -10,18 +15,57 @@ import './MedicalRecords.css';
  * 
  * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5
  */
-const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
-  const [prescriptions, setPrescriptions] = useState([
-    { medicine_name: '', dosage: '', quantity: 1, instructions: '' }
-  ]);
+const emptyRow = () => ({ medicine_id: null, medicine_name: '', unit: '', dosage: '', quantity: 1, instructions: '' });
+const money = (n) => `${Math.round(Number(n) || 0).toLocaleString('vi-VN')}đ`;
+
+const PrescriptionsForm = ({ medicalRecordId, patient, diagnosis, onSuccess, onSkip }) => {
+  const [prescriptions, setPrescriptions] = useState([emptyRow()]);
+  // Medicine catalogue (kê đơn từ danh mục): name, unit, price, stock
+  const [catalogue, setCatalogue] = useState([]);
+  useEffect(() => {
+    axios.get(`${API_BASE}/medicines`, { headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` } })
+      .then((res) => setCatalogue(res.data?.data?.items || []))
+      .catch(() => setCatalogue([]));
+  }, []);
+  const byId = useMemo(() => new Map(catalogue.map((m) => [m.id, m])), [catalogue]);
+  const findByName = (name) => {
+    const key = String(name || '').trim().toLowerCase();
+    return catalogue.find((m) => m.name.toLowerCase() === key) || null;
+  };
+  // total quantity per catalogue medicine across all rows (to compare with stock)
+  const requested = useMemo(() => {
+    const map = new Map();
+    prescriptions.forEach((p) => {
+      if (p.medicine_id) map.set(p.medicine_id, (map.get(p.medicine_id) || 0) + (parseInt(p.quantity, 10) || 0));
+    });
+    return map;
+  }, [prescriptions]);
+  const estimate = prescriptions.reduce((sum, p) => {
+    const med = p.medicine_id ? byId.get(p.medicine_id) : null;
+    return sum + (med ? med.price * (parseInt(p.quantity, 10) || 0) : 0);
+  }, 0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Fill the form from a saved template (đơn mẫu); re-link each medicine to today's catalogue
+  const applyTemplate = (items) => {
+    const rows = (items || []).map((it) => {
+      const med = (it.medicine_id && byId.get(it.medicine_id)) || findByName(it.medicine_name);
+      return {
+        medicine_id: med ? med.id : null,
+        medicine_name: med ? med.name : (it.medicine_name || ''),
+        unit: med ? med.unit : (it.unit || ''),
+        dosage: it.dosage || '',
+        quantity: it.quantity || 1,
+        instructions: it.instructions || ''
+      };
+    });
+    setPrescriptions(rows.length ? rows : [emptyRow()]);
+    setError('');
+  };
+
   const handleAddPrescription = () => {
-    setPrescriptions([
-      ...prescriptions,
-      { medicine_name: '', dosage: '', quantity: 1, instructions: '' }
-    ]);
+    setPrescriptions([...prescriptions, emptyRow()]);
   };
 
   const handleRemovePrescription = (index) => {
@@ -31,8 +75,13 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
   };
 
   const handlePrescriptionChange = (index, field, value) => {
-    const updated = [...prescriptions];
-    updated[index][field] = value;
+    const updated = prescriptions.map((p, i) => (i === index ? { ...p, [field]: value } : p));
+    if (field === 'medicine_name') {
+      // picking a catalogue name links the row to the catalogue; typing anything else unlinks it
+      const med = findByName(value);
+      updated[index].medicine_id = med ? med.id : null;
+      updated[index].unit = med ? med.unit : '';
+    }
     setPrescriptions(updated);
     setError('');
   };
@@ -42,17 +91,17 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
       const prescription = prescriptions[i];
       
       if (!prescription.medicine_name.trim()) {
-        setError(`Vui lòng nhập tên thuốc cho đơn thuốc ${i + 1}`);
+        setError(`Vui lòng nhập tên thuốc cho thuốc #${i + 1}`);
         return false;
       }
       
       if (!prescription.dosage.trim()) {
-        setError(`Vui lòng nhập liều lượng cho đơn thuốc ${i + 1}`);
+        setError(`Vui lòng nhập liều lượng cho thuốc #${i + 1}`);
         return false;
       }
       
       if (!prescription.quantity || prescription.quantity <= 0) {
-        setError(`Số lượng thuốc phải lớn hơn 0 cho đơn thuốc ${i + 1}`);
+        setError(`Số lượng phải lớn hơn 0 cho thuốc #${i + 1}`);
         return false;
       }
     }
@@ -70,6 +119,8 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
       setError('');
 
       const cleanedPrescriptions = prescriptions.map(p => ({
+        medicine_id: p.medicine_id || undefined,
+        unit: p.unit || undefined,
         medicine_name: p.medicine_name.trim(),
         dosage: p.dosage.trim(),
         quantity: parseInt(p.quantity),
@@ -87,7 +138,7 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
       }
     } catch (err) {
       console.error('Error creating prescriptions:', err);
-      setError(err.message || 'Có lỗi xảy ra khi tạo đơn thuốc');
+      setError(err?.error?.message || err?.message || 'Có lỗi xảy ra khi tạo đơn thuốc');
     } finally {
       setLoading(false);
     }
@@ -102,7 +153,7 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
   return (
     <div className="prescriptions-form-container">
       <div className="form-header">
-        <h2>Thêm đơn thuốc</h2>
+        <h2>Kê đơn thuốc</h2>
         <div className="form-subtitle">
           Bệnh nhân: <strong>{patient?.patient_fullname}</strong>
         </div>
@@ -116,18 +167,25 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
           </div>
         )}
 
+        <PrescriptionTemplates
+          rows={prescriptions}
+          diagnosis={diagnosis}
+          onApply={applyTemplate}
+          disabled={loading}
+        />
+
         <div className="prescriptions-list">
           {prescriptions.map((prescription, index) => (
             <div key={index} className="prescription-item">
               <div className="prescription-header">
-                <span className="prescription-number">Đơn thuốc #{index + 1}</span>
+                <span className="prescription-number">Thuốc #{index + 1}</span>
                 {prescriptions.length > 1 && (
                   <button
                     type="button"
                     className="btn-remove"
                     onClick={() => handleRemovePrescription(index)}
                     disabled={loading}
-                    aria-label="Xóa đơn thuốc"
+                    aria-label={`Xoá thuốc #${index + 1}`}
                   >
                     🗑️
                   </button>
@@ -142,11 +200,28 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
                   <input
                     type="text"
                     className="form-control"
+                    list="medicine-catalogue"
                     value={prescription.medicine_name}
                     onChange={(e) => handlePrescriptionChange(index, 'medicine_name', e.target.value)}
-                    placeholder="VD: Paracetamol 500mg"
+                    placeholder="Gõ để tìm trong danh mục, VD: Paracetamol"
                     disabled={loading}
+                    autoComplete="off"
                   />
+                  {(() => {
+                    const med = prescription.medicine_id ? byId.get(prescription.medicine_id) : null;
+                    if (med) {
+                      const need = requested.get(med.id) || 0;
+                      return (
+                        <div className={`presc-med-info ${need > med.stock ? 'is-short' : ''}`}>
+                          ✓ Trong danh mục · {money(med.price)}/{med.unit} · Kho còn {med.stock} {med.unit}
+                          {need > med.stock && ` – không đủ cho ${need} ${med.unit}, bệnh nhân có thể phải mua thêm bên ngoài`}
+                        </div>
+                      );
+                    }
+                    return prescription.medicine_name.trim()
+                      ? <div className="presc-med-info is-outside">Thuốc ngoài danh mục – bệnh nhân tự mua, không tính tiền tại quầy</div>
+                      : null;
+                  })()}
                 </div>
 
                 <div className="form-row">
@@ -166,7 +241,7 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
 
                   <div className="form-group">
                     <label className="form-label">
-                      Số lượng <span className="required">*</span>
+                      Số lượng{prescription.unit ? ` (${prescription.unit})` : ''} <span className="required">*</span>
                     </label>
                     <input
                       type="number"
@@ -180,13 +255,13 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Hướng dẫn sử dụng</label>
-                  <textarea
-                    className="form-control"
+                  <label className="form-label" htmlFor={`rx-instr-${index}`}>Hướng dẫn sử dụng</label>
+                  <SuggestInput
+                    id={`rx-instr-${index}`}
                     value={prescription.instructions}
-                    onChange={(e) => handlePrescriptionChange(index, 'instructions', e.target.value)}
-                    rows="2"
-                    placeholder="VD: Uống 3 lần/ngày sau ăn"
+                    onChange={(v) => handlePrescriptionChange(index, 'instructions', v)}
+                    options={INSTRUCTION_PRESETS}
+                    placeholder="Bấm để chọn cách dùng, hoặc tự gõ (VD: Uống sau ăn)"
                     disabled={loading}
                   />
                 </div>
@@ -195,6 +270,16 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
           ))}
         </div>
 
+        <datalist id="medicine-catalogue">
+          {catalogue.map((m) => (
+            <option key={m.id} value={m.name}>{`${money(m.price)}/${m.unit} · kho ${m.stock}`}</option>
+          ))}
+        </datalist>
+
+        {estimate > 0 && (
+          <div className="presc-estimate">Tạm tính thuốc trong danh mục: <b>{money(estimate)}</b> (thu tại quầy thu ngân)</div>
+        )}
+
         <button
           type="button"
           className="btn btn-add-prescription"
@@ -202,7 +287,7 @@ const PrescriptionsForm = ({ medicalRecordId, patient, onSuccess, onSkip }) => {
           disabled={loading}
         >
           <span>➕</span>
-          <span>Thêm đơn thuốc</span>
+          <span>Thêm thuốc</span>
         </button>
 
         <div className="form-actions">

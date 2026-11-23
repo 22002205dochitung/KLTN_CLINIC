@@ -2,16 +2,8 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 // Database connection pool
-const db = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+// shared connection pool (one place for SSL, SQL mode and connection limits)
+const { pool: db } = require('../config/database');
 
 /**
  * Statistics Controller

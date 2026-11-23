@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 import QRCode from 'qrcode';
+import { bookingCodeOf } from '../appointments/bookingCode';
 import './MyQRCode.css';
+import { API_BASE } from '../../config/api';
 
 const MyQRCode = () => {
   const { user } = useAuth();
@@ -47,16 +49,15 @@ const MyQRCode = () => {
       setLoading(true);
       const token = localStorage.getItem('auth_token');
       const response = await axios.get(
-        `http://localhost:5000/api/appointments/patient/${user.id}`,
+        `${API_BASE}/appointments/my-appointments`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
 
       if (response.data.success) {
-        // Chỉ lấy lịch hẹn đã đặt (booked) - chưa check-in
-        const bookedAppointments = response.data.appointments.filter(
-          apt => apt.status === 'booked'
-        );
-        setAppointments(bookedAppointments);
+        // API returns { upcoming, past, total }; a QR is only useful for upcoming, not-yet-checked-in visits
+        const data = response.data.appointments || {};
+        const list = Array.isArray(data) ? data : (data.upcoming || []);
+        setAppointments(list.filter(apt => apt.status === 'booked'));
       }
     } catch (err) {
       setError('Không thể tải danh sách lịch hẹn');
@@ -151,7 +152,7 @@ const MyQRCode = () => {
                       onClick={() => setSelectedAppointment(apt)}
                     >
                       <div className="apt-header">
-                        <span className="apt-id">#{apt.id}</span>
+                        <span className="apt-id">{bookingCodeOf(apt)}</span>
                         {getStatusBadge(apt.status)}
                       </div>
                       <div className="apt-info">
@@ -216,7 +217,7 @@ const MyQRCode = () => {
                     <h3>Thông tin lịch khám</h3>
                     <div className="detail-row">
                       <span className="label">Mã lịch hẹn:</span>
-                      <span className="value">#{selectedAppointment.id}</span>
+                      <span className="value">{bookingCodeOf(selectedAppointment)}</span>
                     </div>
                     <div className="detail-row">
                       <span className="label">Bác sĩ:</span>

@@ -7,10 +7,10 @@
 
 /* Color Variables - Sky Blue Theme */
 :root {
-  --primary-color: #87CEEB;        /* Sky Blue */
+  --primary-color: #b9ece5;        /* Sky Blue */
   --primary-dark: #4682B4;         /* Steel Blue */
   --primary-light: #B0E0E6;        /* Powder Blue */
-  --primary-gradient: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+  --primary-gradient: linear-gradient(135deg, #b9ece5 0%, #4682B4 100%);
   --primary-shadow: rgba(135, 206, 235, 0.3);
   --primary-shadow-hover: rgba(135, 206, 235, 0.4);
   --primary-bg-light: rgba(135, 206, 235, 0.05);
@@ -1134,4 +1134,204 @@ body {
 
 .access-denied .btn {
   margin-top: 1.5rem;
+}
+
+/* Booking Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+  max-width: 1400px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-overlay {
+    padding: 10px;
+  }
+}
+
+/* ===== Navbar: keep menu labels on one line when there are many role-based items ===== */
+.nav-container {
+  gap: 1rem;
+}
+
+.nav-menu a {
+  white-space: nowrap;
+}
+
+.user-name {
+  white-space: nowrap;
+}
+
+@media (max-width: 1440px) {
+  .nav-container {
+    padding: 1rem 1.25rem;
+  }
+  .nav-menu a {
+    padding: 0.65rem 0.7rem;
+    font-size: 0.9rem;
+  }
+  .nav-contact .hotline {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1180px) {
+  .clinic-name {
+    display: none;
+  }
+}
+
+/* Laptop widths: admin/receptionist menus have up to 8 items – tighten so nothing overflows */
+@media (min-width: 769px) and (max-width: 1440px) {
+  .nav-container {
+    gap: 0.6rem;
+  }
+  .nav-menu a {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.86rem;
+  }
+  .clinic-name {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    gap: 1.5rem;
+  }
+  .nav-menu {
+    flex-wrap: wrap;
+  }
+}
+
+/* ===== Phone navbar: logo + avatar + ☰; the menu drops down only when opened ===== */
+.nav-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+  }
+
+  .nav-logo {
+    order: 1;
+  }
+
+  .nav-logo .logo-img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .clinic-name {
+    font-size: 1.1rem;
+  }
+
+  .nav-contact {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .nav-contact .user-name,
+  .nav-contact .hotline {
+    display: none;
+  }
+
+  .nav-toggle {
+    order: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #fff;
+    color: #108578;
+    font-size: 22px;
+    cursor: pointer;
+  }
+
+  .nav-toggle:focus-visible {
+    outline: 2px solid #108578;
+    outline-offset: 2px;
+  }
+
+  .nav-menu {
+    order: 4;
+    display: none;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    width: 100%;
+    gap: 4px;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .navbar.is-open .nav-menu {
+    display: flex;
+  }
+
+  .nav-menu a {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    text-align: left;
+  }
+
+  .auth-buttons {
+    gap: 6px;
+  }
+
+  .auth-buttons button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Keep the clinic name on one line now that the bell sits in the navbar */
+.clinic-name {
+  white-space: nowrap;
 }

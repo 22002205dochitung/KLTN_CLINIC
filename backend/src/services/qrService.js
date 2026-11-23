@@ -196,7 +196,7 @@ class QRService {
         return {
           valid: false,
           appointment: null,
-          reason: 'QR code không hợp lệ hoặc không tồn tại'
+          reason: 'Mã QR không hợp lệ hoặc không có trong hệ thống'
         };
       }
 
@@ -236,6 +236,14 @@ class QRService {
           valid: false,
           appointment,
           reason: 'Không thể check-in trước ngày hẹn'
+        };
+      }
+
+      if (appointmentDate < today) {
+        return {
+          valid: false,
+          appointment,
+          reason: 'Lịch hẹn đã quá ngày, vui lòng đặt lịch mới'
         };
       }
 

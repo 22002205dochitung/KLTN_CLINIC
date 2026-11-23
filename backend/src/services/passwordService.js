@@ -2,8 +2,8 @@ const bcrypt = require('bcryptjs');
 
 class PasswordService {
     constructor() {
-        // Use salt rounds from env, minimum 10 for development
-        const envRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10;
+        // Default 12 rounds (seed data and security requirement); BCRYPT_SALT_ROUNDS may raise it, never below 10
+        const envRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12;
         this.saltRounds = Math.max(envRounds, 10); // Minimum 10 for reasonable security
     }
 

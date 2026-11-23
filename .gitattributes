@@ -1,0 +1,4 @@
+# shell scripts and server configs must keep Linux line endings
+*.sh text eol=lf
+deploy/*.conf text eol=lf
+deploy/env.production.example text eol=lf

@@ -7,7 +7,6 @@ const {
   optionalAuth,
   requireRole,
   patientOnly,
-  doctorOnly,
   receptionistOnly,
   staffOnly 
 } = require('../middleware/authMiddleware');
@@ -21,6 +20,8 @@ const { globalRateLimit } = require('../middleware/rateLimitMiddleware');
  * 
  * Public Routes (no authentication required):
  * - GET /api/appointments/doctors - Get doctors and departments for booking
+ * - GET /api/appointments/slots - Get available slots for booking
+ * - POST /api/appointments/public/create - Create public appointment
  * 
  * Protected Routes (authentication required):
  * - POST /api/appointments/create - Create new appointment (patients only)
@@ -45,6 +46,35 @@ const { globalRateLimit } = require('../middleware/rateLimitMiddleware');
 router.get('/doctors', 
     globalRateLimit, // Basic rate limiting for public endpoint
     appointmentController.getDoctorsAndDepartments
+);
+
+/**
+ * GET /api/appointments/slots
+ * Get available slots for booking
+ * - Public access (no authentication required)
+ * - Used by both authenticated and unauthenticated users
+ * - Essential for the booking flow
+ * 
+ * Validates Requirement 8.2: Public endpoints accessible without token
+ */
+router.get('/slots',
+    globalRateLimit,
+    appointmentController.getAvailableSlots
+);
+
+/**
+ * POST /api/appointments/public/create
+ * Create public appointment
+ * - Public access (no authentication required)
+ * - Used by both authenticated and unauthenticated users
+ * - Essential for the booking flow
+ * 
+ * Validates Requirement 8.2: Public endpoints accessible without token
+ */
+router.post('/public/create',
+    optionalAuth,
+    globalRateLimit,
+    appointmentController.createPublicAppointment
 );
 
 // Protected Appointment Management Routes
@@ -88,6 +118,26 @@ router.get('/patient/:patientId',
 );
 
 /**
+ * GET /api/appointments/my-appointments
+ * Get appointments for the currently logged-in user
+ * - Requires authentication (JWT token)
+ * - Returns appointments for the authenticated user only
+ * 
+ * Validates Requirements:
+ * - 8.1: Auth middleware protects appointments endpoints requiring authentication
+ * - 8.3: Return 401 with "Token not provided" when no token
+ * - 8.4: Return 401 with "Invalid token" when invalid token
+ */
+router.get('/my-appointments', 
+    verifyToken, // Validates Requirements 8.1, 8.3, 8.4
+    async (req, res) => {
+        // Use the existing controller but pass the user's own ID
+        req.params.patientId = req.user.id;
+        return appointmentController.getPatientAppointments(req, res);
+    }
+);
+
+/**
  * POST /api/appointments/checkin
  * Check-in appointment using QR code
  * - Requires authentication (JWT token)
@@ -109,15 +159,38 @@ router.post('/checkin',
 );
 
 /**
+ * POST /api/appointments/search
+ * Search for patients by name or phone number
+ * - Requires authentication (JWT token)
+ * - Restricted to receptionist and admin roles
+ * - Used for finding patients in the system
+ * 
+ * Validates Requirements:
+ * - 8.1: Auth middleware protects appointments endpoints requiring authentication
+ * - 8.3: Return 401 with "Token not provided" when no token
+ * - 8.4: Return 401 with "Invalid token" when invalid token
+ * - 3.3: Receptionist role access to search functionality
+ * - 3.4: Admin role access to all functions
+ */
+router.post('/search', 
+    verifyToken,
+    requireRole(['receptionist', 'admin']),
+    globalRateLimit,
+    appointmentController.searchPatients
+);
+
+/**
  * GET /api/appointments/queue/:doctorId
  * Get doctor's appointment queue
- * Use /api/queue/doctor/:doctorId instead
+ * - Requires authentication (JWT token)
+ * - Restricted to doctor and admin roles
  */
-// router.get('/queue/:doctorId', 
-//     verifyToken,
-//     requireRole(['doctor', 'admin']),
-//     appointmentController.getDoctorQueue
-// );
+router.get('/queue/:doctorId', 
+    verifyToken,
+    requireRole(['doctor', 'admin']),
+    globalRateLimit,
+    appointmentController.getDoctorQueue
+);
 
 /**
  * PUT /api/appointments/:id/complete
@@ -129,8 +202,35 @@ router.post('/checkin',
  * Part of Medical Records System workflow
  * Requirements: 5.1, 5.2, 5.3, 5.4, 10.3
  */
-router.put('/:id/complete', 
-    doctorOnly,
+/**
+ * PUT /api/appointments/:id/cancel      - Patient cancels own booked appointment
+ * PUT /api/appointments/:id/reschedule  - Patient moves own booked appointment
+ * (controller + service existed but the routes were never registered)
+ */
+router.put('/:id/cancel',
+    verifyToken,
+    requireRole('patient'),
+    globalRateLimit,
+    appointmentController.cancelAppointment
+);
+
+router.put('/:id/reschedule',
+    verifyToken,
+    requireRole('patient'),
+    globalRateLimit,
+    appointmentController.rescheduleAppointment
+);
+
+// Doctor's own schedule (date range + today's counters)
+router.get('/doctor/schedule',
+    verifyToken,
+    requireRole('doctor'),
+    appointmentController.getDoctorSchedule
+);
+
+router.put('/:id/complete',
+    verifyToken,
+    requireRole('doctor'),
     completeAppointment
 );
 

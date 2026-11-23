@@ -1,0 +1,155 @@
+.nb {
+  position: relative;
+}
+
+.nb-bell {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.nb-bell:hover {
+  background: #f0f9ff;
+}
+
+.nb-bell:focus-visible,
+.nb-item:focus-visible,
+.nb-markall:focus-visible {
+  outline: 2px solid #108578;
+  outline-offset: 2px;
+}
+
+.nb-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.nb-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1500;
+  width: min(380px, calc(100vw - 24px));
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.2);
+  text-align: left;
+}
+
+.nb-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.nb-markall {
+  border: none;
+  background: none;
+  color: #108578;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.nb-empty {
+  padding: 24px 14px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.nb-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+}
+
+.nb-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nb-item:hover {
+  background: #f8fafc;
+}
+
+.nb-item.is-warning { background: #fffbeb; }
+.nb-item.is-warning:hover { background: #fef3c7; }
+.nb-item.is-read { background: #fff; opacity: 0.65; }
+
+.nb-icon {
+  flex: 0 0 auto;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.nb-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nb-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.nb-msg {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #475569;
+}
+
+.nb-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .nb-panel {
+    position: fixed;
+    top: 70px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+}

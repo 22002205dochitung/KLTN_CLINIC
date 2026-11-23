@@ -18,7 +18,7 @@
 import axios from 'axios';
 
 // API Configuration
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
+import { API_BASE } from '../config/api';
 const TOKEN_KEY = 'auth_token';
 
 // Retry Configuration
@@ -276,6 +276,26 @@ class AuthAPI {
         }
     }
 
+    /** Registration OTP: confirm the e-mail of a new account */
+    async verifyOtp(email, code) {
+        try {
+            const response = await this.client.post('/auth/verify-otp', { email, code });
+            return response.data;
+        } catch (error) {
+            throw this.handleAPIError(error, 'OTP verification failed');
+        }
+    }
+
+    /** Registration OTP: send a new code */
+    async resendOtp(email) {
+        try {
+            const response = await this.client.post('/auth/resend-otp', { email });
+            return response.data;
+        } catch (error) {
+            throw this.handleAPIError(error, 'Could not resend OTP');
+        }
+    }
+
     /**
      * User logout
      */
@@ -335,6 +355,18 @@ class AuthAPI {
             return response.data;
         } catch (error) {
             throw this.handleAPIError(error, 'Password reset request failed');
+        }
+    }
+
+    /**
+     * Reset password with the 6-digit code e-mailed by forgotPassword
+     */
+    async resetPasswordWithCode(email, code, newPassword) {
+        try {
+            const response = await this.client.post('/auth/reset-password', { email, code, newPassword });
+            return response.data;
+        } catch (error) {
+            throw this.handleAPIError(error, 'Password reset failed');
         }
     }
 

@@ -1,0 +1,136 @@
+.ds-card {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.ds-card h2 {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.ds-default {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px dashed #5ec9bc;
+  border-radius: 12px;
+  background: #f1faf8;
+  color: #0d5c55;
+}
+
+.ds-week th {
+  width: 120px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.ds-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.ds-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 12px;
+  border-radius: 999px;
+  background: #d9f5f0;
+  color: #0d5c55;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-chip.is-date {
+  background: #e0e7ff;
+  color: #312e81;
+}
+
+.ds-chip small {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ds-chip em {
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.ds-chip button {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.08);
+  color: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ds-chip button:hover:not(:disabled) {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.ds-add,
+.ds-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ds-time {
+  width: 92px;
+}
+
+.ds-muted {
+  color: #94a3b8;
+}
+
+.ds-date-form {
+  display: grid;
+  grid-template-columns: 220px auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ds-alert-warn {
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.ds-affected-title {
+  margin-top: 6px;
+  font-weight: 700;
+}
+
+.ds-affected {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-weight: 400;
+}
+
+@media (max-width: 760px) {
+  .ds-date-form {
+    grid-template-columns: 1fr;
+  }
+
+  .ds-week th {
+    width: 80px;
+  }
+}

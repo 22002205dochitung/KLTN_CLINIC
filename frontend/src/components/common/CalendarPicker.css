@@ -1,0 +1,241 @@
+.calp {
+  width: 100%;
+  max-width: 420px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  user-select: none;
+}
+
+.calp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.calp-title {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.calp-nav {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #108578;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.calp-nav:hover:not(:disabled) {
+  background: #f1faf8;
+  border-color: #b9ece5;
+}
+
+.calp-nav:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.calp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calp-weekday {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.calp-weekday.is-sunday {
+  color: #dc2626;
+}
+
+.calp-blank {
+  aspect-ratio: 1 / 1;
+}
+
+.calp-day {
+  aspect-ratio: 1 / 1;
+  min-height: 36px;
+  width: 100%;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.calp-day:hover:not(:disabled) {
+  background: #d9f5f0;
+  border-color: #8edfd4;
+}
+
+.calp-day:focus-visible,
+.calp-nav:focus-visible,
+.calp-today-btn:focus-visible {
+  outline: 2px solid #108578;
+  outline-offset: 2px;
+}
+
+.calp-day.is-sunday {
+  color: #dc2626;
+}
+
+.calp-day.is-today {
+  border-color: #108578;
+}
+
+.calp-day.is-selected {
+  background: #108578;
+  border-color: #108578;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(16, 133, 120, 0.3);
+}
+
+.calp-day.is-disabled {
+  background: transparent;
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.calp-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.calp-foot span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.calp-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.calp-swatch.is-today {
+  border: 2px solid #108578;
+}
+
+.calp-swatch.is-selected {
+  background: #108578;
+}
+
+.calp-today-btn {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid #b9ece5;
+  border-radius: 8px;
+  background: #f1faf8;
+  color: #108578;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---- Field + popover ---- */
+.calp-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.calp-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.calp-field:hover,
+.calp-field.is-open {
+  border-color: #108578;
+}
+
+.calp-field.is-open {
+  box-shadow: 0 0 0 3px rgba(16, 133, 120, 0.15);
+}
+
+.calp-field:focus-visible {
+  outline: 2px solid #108578;
+  outline-offset: 2px;
+}
+
+.calp-field.is-empty .calp-field-text {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.calp-field-text {
+  flex: 1;
+}
+
+.calp-field-caret {
+  color: #64748b;
+  transition: transform 0.15s ease;
+}
+
+.calp-field.is-open .calp-field-caret {
+  transform: rotate(180deg);
+}
+
+.calp-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  width: min(360px, 100%);
+}
+
+.calp-popover .calp {
+  max-width: none;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+/* Clinic closed / doctor day off: crossed out */
+.calp-day.is-off {
+  background: repeating-linear-gradient(135deg, #f8fafc 0 4px, #fee2e2 4px 6px);
+  color: #b91c1c;
+  text-decoration: line-through;
+  opacity: 0.85;
+}
+
+.calp-swatch.is-off {
+  background: repeating-linear-gradient(135deg, #fff 0 2px, #fca5a5 2px 4px);
+  border: 1px solid #fca5a5;
+}
+

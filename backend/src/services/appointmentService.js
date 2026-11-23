@@ -1,5 +1,8 @@
 const db = require('../config/database');
 const qrService = require('./qrService');
+const shiftService = require('./shiftService');
+const { assignBookingCode } = require('./bookingCodeService');
+const { SLOT_CAPACITY, isClinicClosed, weekdayOf, WEEKDAY_NAMES, isSlotOver } = require('../config/booking');
 
 /**
  * Appointment Service - Business logic for appointment management
@@ -15,6 +18,44 @@ const qrService = require('./qrService');
  */
 
 class AppointmentService {
+  /**
+   * Why a doctor cannot be booked on a date, or null when the day is open.
+   * Clinic closing days come first, then the doctor's own days off.
+   *
+   * @param {number} doctorId
+   * @param {string} date - YYYY-MM-DD
+   * @param {object} [conn] - connection inside a transaction (defaults to the pool)
+   * @returns {Promise<null|{code: string, message: string, reason?: string}>}
+   */
+  async getDayBlock(doctorId, date, conn = db.pool) {
+    if (isClinicClosed(date)) {
+      return {
+        code: 'CLINIC_CLOSED',
+        message: `Phòng khám nghỉ ${WEEKDAY_NAMES[weekdayOf(date)]}. Vui lòng chọn ngày khác.`
+      };
+    }
+    const [leaves] = await conn.execute(
+      'SELECT reason FROM doctor_leaves WHERE doctor_id = ? AND leave_date = ?',
+      [doctorId, date]
+    );
+    if (leaves.length > 0) {
+      return {
+        code: 'DOCTOR_ON_LEAVE',
+        message: 'Bác sĩ nghỉ ngày này. Vui lòng chọn ngày khác hoặc bác sĩ khác.',
+        reason: leaves[0].reason || null
+      };
+    }
+    // the doctor has shifts, but none on this day
+    const windows = await shiftService.getWindows(doctorId, date, conn);
+    if (windows && windows.length === 0) {
+      return {
+        code: 'NO_SHIFT',
+        message: 'Bác sĩ không có ca trực ngày này. Vui lòng chọn ngày khác hoặc bác sĩ khác.'
+      };
+    }
+    return null;
+  }
+
   /**
    * Check if a time slot is available for booking
    * 
@@ -38,7 +79,7 @@ class AppointmentService {
 
       const [results] = await db.pool.execute(query, [doctorId, date, timeSlot]);
       
-      return results[0].count === 0;
+      return results[0].count < SLOT_CAPACITY;
     } catch (error) {
       console.error('Error checking slot availability:', error);
       throw new Error('Failed to check slot availability');
@@ -58,9 +99,23 @@ class AppointmentService {
    * Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 24.1
    */
   async createAppointment(data) {
-    const { patientId, doctorId, appointmentDate, timeSlot } = data;
+    const { patientId, doctorId, appointmentDate, timeSlot, symptoms = null, consultationFee = 0, paymentMethod = null, paymentStatus = 'unpaid' } = data;
+    // which smart suggestion led to this booking (for measuring the recommendation module)
+    const bookingSource = ['specialty', 'slot', 'followup'].includes(data.bookingSource) ? data.bookingSource : null;
+    // Khám dịch vụ / BHYT; online transfer -> the place is held for holdMinutes until paid
+    const examType = data.examType === 'insurance' ? 'insurance' : 'service';
+    const insuranceNumber = examType === 'insurance' ? data.insuranceNumber : null;
+    const insuranceExpiry = examType === 'insurance' ? data.insuranceExpiry : null;
+    const holdMinutes = Number(data.holdMinutes) > 0 ? Number(data.holdMinutes) : 0;
 
     return await db.transaction(async (connection) => {
+      // 0. Clinic closed / doctor on leave
+      const block = await this.getDayBlock(doctorId, appointmentDate, connection);
+      if (block) {
+        throw new Error(block.code);
+      }
+      await shiftService.assertSlotInShift(doctorId, appointmentDate, timeSlot, connection);
+
       // 1. Check slot availability (with row lock)
       const slotCheckQuery = `
         SELECT COUNT(*) as count
@@ -77,8 +132,20 @@ class AppointmentService {
         [doctorId, appointmentDate, timeSlot]
       );
 
-      if (slotResults[0].count > 0) {
+      if (slotResults[0].count >= SLOT_CAPACITY) {
         throw new Error('SLOT_NOT_AVAILABLE');
+      }
+
+      // 1b. The same patient cannot hold two places in the same slot with the same doctor
+      const [dupResults] = await connection.execute(
+        `SELECT COUNT(*) as count
+         FROM appointments
+         WHERE doctor_id = ? AND appointment_date = ? AND time_slot = ? AND patient_id = ?
+           AND status IN ('booked', 'checked_in')`,
+        [doctorId, appointmentDate, timeSlot, patientId]
+      );
+      if (dupResults[0].count > 0) {
+        throw new Error('DUPLICATE_BOOKING');
       }
 
       // 2. Generate unique QR code token
@@ -105,11 +172,14 @@ class AppointmentService {
         }
       }
 
-      // 3. Insert appointment
+      // 3. Insert appointment with payment fields
       const insertQuery = `
         INSERT INTO appointments 
-        (patient_id, doctor_id, appointment_date, time_slot, qr_code_token, status)
-        VALUES (?, ?, ?, ?, ?, 'booked')
+        (patient_id, doctor_id, appointment_date, time_slot, symptoms, qr_code_token, status,
+         consultation_fee, payment_method, payment_status, booking_source,
+         exam_type, insurance_number, insurance_expiry, hold_expires_at)
+        VALUES (?, ?, ?, ?, ?, ?, 'booked', ?, ?, ?, ?, ?, ?, ?,
+                IF(? > 0, DATE_ADD(NOW(), INTERVAL ? MINUTE), NULL))
       `;
 
       const [insertResult] = await connection.execute(insertQuery, [
@@ -117,12 +187,50 @@ class AppointmentService {
         doctorId,
         appointmentDate,
         timeSlot,
-        qrCodeToken
+        symptoms,
+        qrCodeToken,
+        consultationFee,
+        paymentMethod,
+        paymentStatus,
+        bookingSource,
+        examType,
+        insuranceNumber,
+        insuranceExpiry,
+        holdMinutes,
+        holdMinutes
       ]);
 
       const appointmentId = insertResult.insertId;
 
-      // 4. Fetch complete appointment details
+      // Booking number for the patient: YYMMDD-<department code>-<running number>, e.g. 261125-TMH-001
+      await assignBookingCode(connection, appointmentId, doctorId, appointmentDate);
+
+      // 4. Auto-create consultation payment transaction when booking is paid immediately
+      const normalizedPaymentStatus = String(paymentStatus || 'unpaid').toLowerCase();
+      const normalizedPaymentMethod = paymentMethod || 'cash';
+      const amount = Number(consultationFee) || 0;
+
+      if (amount > 0 && ['paid', 'completed'].includes(normalizedPaymentStatus)) {
+        const [existingTx] = await connection.execute(
+          `SELECT id
+           FROM payment_transactions
+           WHERE transaction_type = 'consultation' AND reference_id = ?
+           LIMIT 1`,
+          [appointmentId]
+        );
+
+        if (existingTx.length === 0) {
+          await connection.execute(
+            `INSERT INTO payment_transactions
+             (transaction_type, reference_id, patient_id, amount,
+              payment_method, payment_status, paid_at, created_by)
+             VALUES ('consultation', ?, ?, ?, ?, 'completed', NOW(), ?)`,
+            [appointmentId, patientId, amount, normalizedPaymentMethod, patientId]
+          );
+        }
+      }
+
+      // 5. Fetch complete appointment details
       const fetchQuery = `
         SELECT 
           a.id,
@@ -131,8 +239,18 @@ class AppointmentService {
           a.appointment_date,
           a.time_slot,
           a.qr_code_token,
+          a.booking_code,
           a.status,
           a.created_at,
+          a.symptoms,
+          a.consultation_fee,
+          a.payment_method,
+          a.payment_status,
+          a.exam_type,
+          a.insurance_number,
+          DATE_FORMAT(a.insurance_expiry, '%Y-%m-%d') AS insurance_expiry,
+          a.hold_expires_at,
+          TIMESTAMPDIFF(SECOND, NOW(), a.hold_expires_at) AS hold_seconds_left,
           u.fullname as patient_name,
           u.phone as patient_phone,
           u.email as patient_email,
@@ -151,7 +269,7 @@ class AppointmentService {
       const [appointmentResults] = await connection.execute(fetchQuery, [appointmentId]);
       const appointment = appointmentResults[0];
 
-      // 5. Generate QR code image
+      // 6. Generate QR code image
       const qrCodeImage = await qrService.generateQRCode(qrCodeToken);
 
       return {
@@ -179,6 +297,7 @@ class AppointmentService {
           a.appointment_date,
           a.time_slot,
           a.qr_code_token,
+          a.booking_code,
           a.status,
           a.created_at,
           u.fullname as patient_name,
@@ -239,8 +358,19 @@ class AppointmentService {
           a.appointment_date,
           a.time_slot,
           a.qr_code_token,
+          a.booking_code,
           a.status,
           a.created_at,
+          a.symptoms,
+          a.consultation_fee,
+          a.payment_method,
+          a.payment_status,
+          a.checked_in_at,
+          a.exam_type,
+          a.insurance_number,
+          DATE_FORMAT(a.insurance_expiry, '%Y-%m-%d') AS insurance_expiry,
+          a.hold_expires_at,
+          TIMESTAMPDIFF(SECOND, NOW(), a.hold_expires_at) AS hold_seconds_left,
           du.fullname as doctor_name,
           d.degree as doctor_degree,
           dep.name as department_name,
@@ -353,11 +483,10 @@ class AppointmentService {
       }
 
       // Update status
-      const updateQuery = `
-        UPDATE appointments
-        SET status = ?
-        WHERE id = ?
-      `;
+      // Record the real arrival time so the doctor's queue is ordered by check-in, not booking time
+      const updateQuery = newStatus === 'checked_in'
+        ? 'UPDATE appointments SET status = ?, checked_in_at = NOW() WHERE id = ?'
+        : 'UPDATE appointments SET status = ? WHERE id = ?';
 
       await db.pool.execute(updateQuery, [newStatus, id]);
 
@@ -435,7 +564,7 @@ class AppointmentService {
     return await db.transaction(async (connection) => {
       // 1. Validate ownership
       const [ownershipCheck] = await connection.execute(
-        'SELECT patient_id, doctor_id, status FROM appointments WHERE id = ? FOR UPDATE',
+        "SELECT patient_id, doctor_id, status, DATE_FORMAT(appointment_date, '%Y-%m-%d') AS ymd FROM appointments WHERE id = ? FOR UPDATE",
         [appointmentId]
       );
 
@@ -454,19 +583,31 @@ class AppointmentService {
         throw new Error(`CANNOT_RESCHEDULE: Appointment with status '${appointment.status}' cannot be rescheduled`);
       }
 
+      // 3a. The new day must be open for this doctor
+      const block = await this.getDayBlock(appointment.doctor_id, appointmentDate, connection);
+      if (block) {
+        throw new Error(block.code);
+      }
+      await shiftService.assertSlotInShift(appointment.doctor_id, appointmentDate, timeSlot, connection);
+
       // 3. Check new slot availability
       const [slotCheck] = await connection.execute(
-        `SELECT COUNT(*) as count
+        `SELECT COUNT(*) as count,
+                SUM(patient_id = ?) as mine
          FROM appointments
          WHERE doctor_id = ?
            AND appointment_date = ?
            AND time_slot = ?
            AND status IN ('booked', 'checked_in')
-           AND id != ?`,
-        [appointment.doctor_id, appointmentDate, timeSlot, appointmentId]
+           AND id != ?
+         FOR UPDATE`,
+        [patientId, appointment.doctor_id, appointmentDate, timeSlot, appointmentId]
       );
 
-      if (slotCheck[0].count > 0) {
+      if (Number(slotCheck[0].mine) > 0) {
+        throw new Error('DUPLICATE_BOOKING');
+      }
+      if (slotCheck[0].count >= SLOT_CAPACITY) {
         throw new Error('SLOT_NOT_AVAILABLE');
       }
 
@@ -477,6 +618,10 @@ class AppointmentService {
          WHERE id = ?`,
         [appointmentDate, timeSlot, appointmentId]
       );
+      // The code carries the exam day: moving to another day gives a new number for that day
+      if (String(appointmentDate).slice(0, 10) !== appointment.ymd) {
+        await assignBookingCode(connection, appointmentId, appointment.doctor_id, appointmentDate);
+      }
 
       // 5. Fetch updated appointment
       const [updatedResults] = await connection.execute(
@@ -487,6 +632,7 @@ class AppointmentService {
            a.appointment_date,
            a.time_slot,
            a.qr_code_token,
+           a.booking_code,
            a.status,
            a.created_at,
            u.fullname as patient_name,
@@ -523,48 +669,50 @@ class AppointmentService {
   async getAvailableSlots(doctorId, date) {
     try {
       // Define clinic working hours and slot duration
-      const slots = [
-        '08:00-08:30', '08:30-09:00', '09:00-09:30', '09:30-10:00',
-        '10:00-10:30', '10:30-11:00', '11:00-11:30', '11:30-12:00',
-        '14:00-14:30', '14:30-15:00', '15:00-15:30', '15:30-16:00',
-        '16:00-16:30', '16:30-17:00'
-      ];
+      // 08:00–12:00 and 14:00–17:00, or all day with CLINIC_OPEN_24H=1 (see config/booking.js)
+      const slots = require('../config/booking').TIME_SLOTS;
 
-      // Get booked slots
+      // How many patients already hold each slot
       const query = `
-        SELECT time_slot
+        SELECT time_slot, COUNT(*) AS taken
         FROM appointments
         WHERE doctor_id = ?
           AND appointment_date = ?
           AND status IN ('booked', 'checked_in')
+        GROUP BY time_slot
       `;
 
       const [bookedSlots] = await db.pool.execute(query, [doctorId, date]);
-      const bookedTimeSlots = bookedSlots.map(row => row.time_slot);
+      const dayBlock = await this.getDayBlock(doctorId, date);
+      const shiftWindows = await shiftService.getWindows(doctorId, date);
+      const takenBySlot = {};
+      bookedSlots.forEach((row) => { takenBySlot[row.time_slot] = Number(row.taken); });
 
       // Check if date is today to filter past time slots
       const selectedDate = new Date(date);
       const today = new Date();
       const isToday = selectedDate.toDateString() === today.toDateString();
-      const currentTime = today.getHours() * 60 + today.getMinutes(); // Current time in minutes
 
       // Mark availability
-      const availableSlots = slots.map(slot => {
-        const isBooked = bookedTimeSlots.includes(slot);
+      const availableSlots = slots.filter((slot) => shiftService.slotInWindows(slot, shiftWindows)).map(slot => {
+        const taken = takenBySlot[slot] || 0;
+        const isFull = taken >= SLOT_CAPACITY;
         let isPast = false;
 
         if (isToday) {
-          // Parse slot start time
-          const [startTime] = slot.split('-');
-          const [hours, minutes] = startTime.split(':').map(Number);
-          const slotTimeInMinutes = hours * 60 + minutes;
-          isPast = slotTimeInMinutes < currentTime;
+          // bookable until the slot ends (walk-ins during the running slot)
+          isPast = isSlotOver(date, slot, today);
         }
 
         return {
           time_slot: slot,
-          available: !isBooked && !isPast,
-          booked: isBooked,
+          available: !isFull && !isPast && !dayBlock,
+          closed: !!dayBlock,
+          booked: isFull, // kept for older clients: true means "no place left"
+          full: isFull,
+          taken,
+          capacity: SLOT_CAPACITY,
+          remaining: Math.max(SLOT_CAPACITY - taken, 0),
           past: isPast
         };
       });

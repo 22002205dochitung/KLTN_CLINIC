@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Appointment API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        #result.success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+            color: #065f46;
+        }
+        #result.error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        #log {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        .log-line {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Appointment API</h1>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label>Họ tên:</label>
+                <input type="text" id="fullName" value="Test User" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Số điện thoại:</label>
+                <input type="tel" id="phone" value="0123456789" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" value="test@test.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Chuyên khoa (Doctor ID):</label>
+                <select id="doctorId" required>
+                    <option value="">Chọn chuyên khoa</option>
+                    <option value="1">Khoa 1</option>
+                    <option value="2">Khoa 2</option>
+                    <option value="3">Khoa 3</option>
+                    <option value="4">Khoa 4</option>
+                    <option value="5">Khoa 5</option>
+                    <option value="6">Khoa 6</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Ngày khám:</label>
+                <input type="date" id="appointmentDate" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Buổi khám:</label>
+                <select id="timeSlot" required>
+                    <option value="08:00">Sáng (08:00)</option>
+                    <option value="14:00">Chiều (14:00)</option>
+                    <option value="17:00">Tối (17:00)</option>
+                </select>
+            </div>
+            
+            <button type="submit">🚀 Test Đặt Lịch</button>
+        </form>
+        
+        <div id="result"></div>
+        
+        <div id="log">
+            <div class="log-line">📋 Console Log:</div>
+        </div>
+    </div>
+
+    <script>
+        // Set default date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('appointmentDate').value = tomorrow.toISOString().split('T')[0];
+
+        const log = document.getElementById('log');
+        const result = document.getElementById('result');
+
+        function addLog(message, color = '#00ff00') {
+            const line = document.createElement('div');
+            line.className = 'log-line';
+            line.style.color = color;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            log.appendChild(line);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            addLog('🔵 Starting test...', '#00bfff');
+            result.style.display = 'none';
+
+            const requestBody = {
+                fullName: document.getElementById('fullName').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                doctorId: parseInt(document.getElementById('doctorId').value),
+                appointmentDate: document.getElementById('appointmentDate').value,
+                timeSlot: document.getElementById('timeSlot').value,
+                symptoms: 'Test booking từ test script',
+                consultationFee: 150000,
+                paymentMethod: 'cash',
+                paymentStatus: 'pending'
+            };
+
+            addLog('📤 Request body: ' + JSON.stringify(requestBody, null, 2));
+            addLog('📤 Sending to: http://localhost:5000/api/appointments/public/create', '#ffff00');
+
+            try {
+                const response = await fetch('http://localhost:5000/api/appointments/public/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                addLog(`📥 Response status: ${response.status} ${response.statusText}`, '#00bfff');
+
+                const data = await response.json();
+                addLog('📥 Response data: ' + JSON.stringify(data, null, 2));
+
+                if (data.success) {
+                    addLog('✅ SUCCESS! Appointment created!', '#00ff00');
+                    result.className = 'success';
+                    result.textContent = `✅ Thành công! Appointment ID: ${data.appointment.id}`;
+                    result.style.display = 'block';
+                } else {
+                    addLog('❌ FAILED! Response success = false', '#ff0000');
+                    result.className = 'error';
+                    result.textContent = `❌ Thất bại: ${data.message || 'Unknown error'}`;
+                    result.style.display = 'block';
+                }
+            } catch (error) {
+                addLog('❌ ERROR: ' + error.message, '#ff0000');
+                result.className = 'error';
+                result.textContent = `❌ Lỗi: ${error.message}`;
+                result.style.display = 'block';
+            }
+        });
+
+        addLog('✅ Test page loaded successfully');
+        addLog('👉 Fill the form and click "Test Đặt Lịch"');
+    </script>
+</body>
+</html>

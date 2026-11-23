@@ -1,0 +1,621 @@
+/* ===== Shared payment-screen tokens ===== */
+.cashier-container,
+.pm-container {
+  --pm-surface: #ffffff;
+  --pm-surface-2: #f6f7f9;
+  --pm-border: #e3e6eb;
+  --pm-text: #1f2430;
+  --pm-text-2: #5b6170;
+  --pm-muted: #8a909c;
+  --pm-primary: #108578;
+  --pm-primary-hover: #17634a;
+  --pm-danger: #c63d3d;
+  --pm-radius: 10px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  color: var(--pm-text);
+}
+
+.cashier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.cashier-header h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.cashier-subtitle {
+  margin: 4px 0 0;
+  color: var(--pm-text-2);
+}
+
+/* ===== Controls ===== */
+.cashier-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.cashier-input {
+  padding: 9px 12px;
+  border: 1px solid var(--pm-border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--pm-surface);
+  color: var(--pm-text);
+  font-family: inherit;
+}
+
+.cashier-input:focus {
+  outline: 2px solid var(--pm-primary);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+
+.cashier-search {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.cashier-btn {
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.cashier-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cashier-btn-primary {
+  background: var(--pm-primary);
+  color: #fff;
+}
+
+.cashier-btn-primary:hover:not(:disabled) {
+  background: var(--pm-primary-hover);
+}
+
+.cashier-btn-secondary {
+  background: var(--pm-surface);
+  border-color: var(--pm-border);
+  color: var(--pm-text);
+}
+
+.cashier-btn-secondary:hover:not(:disabled) {
+  background: var(--pm-surface-2);
+}
+
+.cashier-btn-ghost {
+  background: transparent;
+  color: var(--pm-text-2);
+}
+
+.cashier-btn-ghost:hover:not(:disabled) {
+  background: var(--pm-surface-2);
+}
+
+.cashier-btn-danger {
+  background: var(--pm-surface);
+  border-color: #efc4c4;
+  color: var(--pm-danger);
+}
+
+.cashier-btn-danger:hover:not(:disabled) {
+  background: #fdf1f1;
+}
+
+.cashier-btn-sm {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+/* ===== Tabs ===== */
+.cashier-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--pm-border);
+  margin-bottom: 16px;
+}
+
+.cashier-tab {
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pm-text-2);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.cashier-tab.active {
+  color: var(--pm-primary);
+  border-bottom-color: var(--pm-primary);
+}
+
+.cashier-count {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--pm-surface-2);
+  color: var(--pm-text-2);
+  font-size: 12px;
+}
+
+.cashier-tab.active .cashier-count {
+  background: #e3f2ec;
+  color: var(--pm-primary);
+}
+
+.cashier-tab-total {
+  margin-left: auto;
+  padding: 8px 0;
+  color: var(--pm-text-2);
+  font-size: 14px;
+}
+
+.cashier-tab-total strong {
+  color: var(--pm-text);
+}
+
+.cashier-hint {
+  color: var(--pm-muted);
+  font-size: 13px;
+}
+
+/* ===== Tables ===== */
+.cashier-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--pm-border);
+  border-radius: var(--pm-radius);
+  background: var(--pm-surface);
+}
+
+.cashier-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.cashier-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--pm-surface-2);
+  color: var(--pm-text-2);
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--pm-border);
+}
+
+.cashier-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--pm-border);
+  vertical-align: middle;
+}
+
+.cashier-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cashier-table tbody tr:hover {
+  background: #fafbfc;
+}
+
+.cashier-table tfoot td {
+  border-top: 1px solid var(--pm-border);
+  border-bottom: none;
+  font-weight: 600;
+}
+
+.cashier-table .num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.cashier-table .strong {
+  font-weight: 700;
+}
+
+.cashier-table .actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cashier-table-compact td,
+.cashier-table-compact th {
+  padding: 8px 10px;
+}
+
+.cell-main {
+  font-weight: 500;
+}
+
+.cell-sub {
+  color: var(--pm-muted);
+  font-size: 12px;
+  margin-top: 2px;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cashier-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--pm-surface-2);
+  color: var(--pm-text-2);
+  white-space: nowrap;
+}
+
+.cashier-chip.chip-checked_in {
+  background: #e8f1fc;
+  color: #1d5fae;
+}
+
+.cashier-chip.chip-completed {
+  background: #e3f2ec;
+  color: var(--pm-primary);
+}
+
+.cashier-price {
+  width: 120px;
+  text-align: right;
+}
+
+.cashier-empty {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--pm-text-2);
+  background: var(--pm-surface);
+  border: 1px dashed var(--pm-border);
+  border-radius: var(--pm-radius);
+}
+
+.cashier-alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.cashier-alert-error {
+  background: #fdf1f1;
+  color: #9b2c2c;
+  border: 1px solid #f3d0d0;
+}
+
+.cashier-alert-success {
+  background: #ecf7f2;
+  color: #17634a;
+  border: 1px solid #c6e6d7;
+}
+
+/* ===== Modal ===== */
+.cashier-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 20, 30, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.cashier-modal {
+  background: var(--pm-surface, #fff);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 680px;
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  color: #1f2430;
+}
+
+.cashier-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e3e6eb;
+}
+
+.cashier-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.cashier-modal-close {
+  background: none;
+  border: none;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  color: #8a909c;
+}
+
+.cashier-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+
+.cashier-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid #e3e6eb;
+}
+
+.cashier-modal .cashier-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cashier-modal .cashier-price {
+  width: 120px;
+}
+
+.cashier-label {
+  display: block;
+  margin: 16px 0 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.cashier-amount {
+  font-size: 18px !important;
+  font-weight: 700;
+}
+
+.cashier-info {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.cashier-info dt {
+  color: #8a909c;
+}
+
+.cashier-info dd {
+  margin: 0;
+}
+
+.cashier-receipt {
+  text-align: center;
+}
+
+.cashier-receipt .cashier-info {
+  text-align: left;
+  max-width: 440px;
+  margin: 16px auto 0;
+}
+
+.receipt-check {
+  width: 56px;
+  height: 56px;
+  margin: 4px auto 8px;
+  border-radius: 50%;
+  background: #e3f2ec;
+  color: #108578;
+  font-size: 28px;
+  line-height: 56px;
+  font-weight: 700;
+}
+
+.receipt-amount {
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.receipt-items {
+  list-style: none;
+  padding: 12px 0 0;
+  margin: 12px auto 0;
+  max-width: 440px;
+  border-top: 1px dashed #e3e6eb;
+  text-align: left;
+  font-size: 14px;
+}
+
+.receipt-items li {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+@media (max-width: 640px) {
+  .cashier-tab-total {
+    margin-left: 0;
+    width: 100%;
+  }
+  .cashier-info {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .cashier-info dd {
+    margin-bottom: 6px;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .cashier-modal,
+  .cashier-modal * {
+    visibility: visible;
+  }
+  .cashier-modal {
+    position: absolute;
+    inset: 0;
+    box-shadow: none;
+    max-height: none;
+  }
+  .cashier-modal-footer,
+  .cashier-modal-close {
+    display: none;
+  }
+}
+
+/* Bank transfers the patient reported as sent */
+.cashier-table tr.row-reported td {
+  background: #eff6ff;
+}
+
+.cashier-reported {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cashier-alert-transfer {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+/* Phones: each pending payment becomes a card instead of a wide table to scroll sideways */
+@media (max-width: 640px) {
+  .cashier-table-wrap:has(.cashier-table-cards) {
+    overflow: visible;
+    border: none;
+    background: transparent;
+  }
+
+  .cashier-table-cards thead {
+    display: none;
+  }
+
+  .cashier-table-cards,
+  .cashier-table-cards tbody,
+  .cashier-table-cards tr,
+  .cashier-table-cards td {
+    display: block;
+    width: 100%;
+  }
+
+  .cashier-table-cards tr {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--pm-border, #e2e8f0);
+    border-radius: 14px;
+    background: var(--pm-surface, #fff);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  }
+
+  .cashier-table.cashier-table-cards tr.row-reported td {
+    background: transparent;
+  }
+
+  .cashier-table-cards tr.row-reported {
+    border-color: #93c5fd;
+    background: #eff6ff;
+  }
+
+  .cashier-table-cards td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 6px 0;
+    border: none;
+    text-align: right;
+  }
+
+  .cashier-table-cards td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: #64748b;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .cashier-table-cards td.actions {
+    padding-top: 10px;
+  }
+
+  .cashier-table-cards td.actions::before {
+    content: none;
+  }
+
+  .cashier-table-cards td.actions .cashier-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+/* Phone cards: label in a fixed left column, the cell's content stacked on the right */
+@media (max-width: 640px) {
+  .cashier-table-cards td {
+    display: block;
+    position: relative;
+    min-height: 26px;
+    padding: 6px 0 6px 96px;
+    text-align: left;
+  }
+
+  .cashier-table-cards td::before {
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 88px;
+  }
+
+  .cashier-table-cards td.num {
+    text-align: left;
+  }
+
+  .cashier-table-cards td.actions {
+    padding-left: 0;
+  }
+}
+
+/* medication checkout: lines the patient does not take */
+.cashier-row-skipped td {
+  opacity: 0.55;
+}
+
+.cashier-stock-short {
+  color: #b45309 !important;
+  font-weight: 600;
+}

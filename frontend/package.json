@@ -6,7 +6,8 @@
   "scripts": {
     "test": "react-scripts test",
     "start": "set HOST=0.0.0.0&& react-scripts start",
-    "build": "react-scripts build"
+    "build": "react-scripts build",
+    "start:https": "node scripts/https-proxy.js"
   },
   "keywords": [],
   "author": "",

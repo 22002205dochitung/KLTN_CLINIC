@@ -19,10 +19,10 @@
   align-items: center;
   margin-bottom: 30px;
   padding: 30px;
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   border-radius: 16px;
   color: white;
-  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.3);
+  box-shadow: 0 10px 30px rgba(38, 166, 154, 0.3);
 }
 
 .dashboard-welcome h1 {
@@ -100,13 +100,13 @@
 
 .breadcrumb-item {
   font-size: 14px;
-  color: #0ea5e9;
+  color: #26a69a;
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .breadcrumb-item:hover {
-  color: #0284c7;
+  color: #108578;
   text-decoration: underline;
 }
 
@@ -181,7 +181,7 @@
   background: white;
   padding: 30px;
   border-radius: 16px;
-  border-top: 4px solid #0ea5e9;
+  border-top: 4px solid #26a69a;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s, box-shadow 0.3s;
   cursor: pointer;
@@ -220,7 +220,7 @@
 .card-action {
   width: 100%;
   padding: 12px 20px;
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -232,7 +232,7 @@
 
 .card-action:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  box-shadow: 0 4px 12px rgba(38, 166, 154, 0.3);
 }
 
 /* Dashboard Sections */
@@ -322,13 +322,13 @@
   padding: 16px;
   border-radius: 12px;
   background: #f7fafc;
-  border-left: 4px solid #0ea5e9;
+  border-left: 4px solid #26a69a;
 }
 
 .schedule-time {
   font-size: 14px;
   font-weight: 600;
-  color: #0ea5e9;
+  color: #26a69a;
   min-width: 110px;
 }
 
@@ -480,7 +480,7 @@
   width: 50px;
   height: 50px;
   border: 5px solid #f3f4f6;
-  border-top: 5px solid #0ea5e9;
+  border-top: 5px solid #26a69a;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
@@ -511,7 +511,7 @@
 
 .dashboard-error button {
   padding: 12px 30px;
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -523,7 +523,7 @@
 
 .dashboard-error button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  box-shadow: 0 4px 12px rgba(38, 166, 154, 0.3);
 }
 
 /* Responsive Design */
@@ -600,4 +600,231 @@
   .dashboard-container {
     background: white;
   }
+}
+
+/* Phones: two compact counters per row instead of one tall card each */
+@media (max-width: 480px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .stat-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+}
+
+/* Patient: follow-up visits ("Lịch tái khám") */
+.followup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.followup-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px solid #d9f5f0;
+  border-radius: 12px;
+  background: #f1faf8;
+}
+
+.followup-item.is-overdue {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.followup-date {
+  display: flex;
+  flex-direction: column;
+  min-width: 96px;
+}
+
+.followup-date strong {
+  font-size: 17px;
+  color: #0f172a;
+}
+
+.followup-date span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #108578;
+}
+
+.followup-item.is-overdue .followup-date span {
+  color: #b45309;
+}
+
+.followup-info {
+  flex: 1;
+  min-width: 180px;
+}
+
+.followup-doctor {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.followup-diagnosis {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.followup-btn {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 10px;
+  background: #108578;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.followup-btn:focus-visible {
+  outline: 2px solid #108578;
+  outline-offset: 2px;
+}
+
+.followup-booked {
+  font-size: 13px;
+  font-weight: 700;
+  color: #047857;
+}
+
+@media (max-width: 480px) {
+  .followup-btn {
+    width: 100%;
+  }
+}
+
+/* Receptionist: check in from today's list */
+.quick-checkin-btn {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 10px;
+  background: #108578;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.quick-checkin-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.quick-checkin-btn:focus-visible {
+  outline: 2px solid #108578;
+  outline-offset: 2px;
+}
+
+.quick-checkin-msg {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 14px;
+}
+
+.quick-checkin-msg.is-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+/* App.css styles .section-title for the home page (huge gradient text); keep dashboard titles plain */
+.dashboard-section .section-title,
+.dashboard-container .section-title {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+  color: #2d3748;
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  -webkit-text-fill-color: currentColor;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.dashboard-section .section-title::before,
+.dashboard-section .section-title::after {
+  content: none;
+}
+
+@media (max-width: 480px) {
+  .dashboard-section .section-title,
+  .dashboard-container .section-title {
+    font-size: 18px;
+  }
+}
+
+/* Patient: today's visit with live queue estimate */
+.today-visit-item + .today-visit-item {
+  margin-top: 12px;
+}
+
+.today-visit-meta {
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #475569;
+}
+
+/* Receptionist: print the appointment slip from today's list */
+.slip-print-btn {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  margin-right: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.slip-print-btn:hover {
+  border-color: #108578;
+  background: #f1faf8;
+}
+
+.slip-print-btn:focus-visible {
+  outline: 2px solid #108578;
+  outline-offset: 2px;
+}
+
+/* Subtitle under the blue page header: a global p colour made it grey on blue (unreadable) */
+.dashboard-header .dashboard-subtitle,
+.dashboard-header .dashboard-welcome p {
+  color: rgba(255, 255, 255, 0.92);
 }

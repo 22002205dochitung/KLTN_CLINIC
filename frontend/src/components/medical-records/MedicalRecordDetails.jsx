@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getMedicalRecordDetails } from '../../services/medicalRecordsService';
 import PrescriptionsList from './PrescriptionsList';
+import { printPrescription } from './printPrescription';
 import './MedicalRecords.css';
 
 /**
@@ -209,11 +210,17 @@ const MedicalRecordDetails = ({ medicalRecordId, onBack }) => {
             <button className="btn btn-secondary" onClick={onBack}>
               ← Quay lại danh sách
             </button>
-            <button 
+            <button
+              className="btn btn-primary"
+              onClick={() => { if (!printPrescription(medicalRecordId)) alert('Trình duyệt đã chặn cửa sổ in. Hãy cho phép pop-up rồi thử lại.'); }}
+            >
+              🖨️ In đơn thuốc
+            </button>
+            <button
               className="btn btn-outline"
               onClick={() => window.print()}
             >
-              🖨️ In hồ sơ
+              In hồ sơ
             </button>
           </div>
         </div>

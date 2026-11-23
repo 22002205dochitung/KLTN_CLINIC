@@ -86,3 +86,9 @@ logs
 # Documentation working files
 *SUMMARY.md
 *COMPLETION*.md
+# Cached loudspeaker audio (FPT.AI TTS)
+backend/storage/tts/
+
+# Deploy package and database dump (contain real data) – never commit
+deploy/thct-clinic-deploy.zip
+deploy/thct_clinic_full.sql

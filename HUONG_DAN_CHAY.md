@@ -63,7 +63,7 @@
 3. **Khởi động MySQL:**
    - Mở XAMPP Control Panel
    - Click "Start" ở dòng MySQL
-   - MySQL sẽ chạy trên port 3306
+   - MySQL của dự án chạy trên port **3307** (xem dòng `port=` trong `C:\xampp\mysql\bin\my.ini`)
 
 ---
 
@@ -85,16 +85,26 @@
    - Click vào database `kltn_clinic` bên trái
    - Bạn sẽ thấy 10+ bảng như: users, appointments, doctors, departments...
 
-### Bước 3.2: Cập nhật thêm dữ liệu (Tùy chọn)
+### Bước 3.2: Import các file cập nhật (Bắt buộc)
 
-Nếu muốn thêm dữ liệu mẫu:
-```bash
-# Trong phpMyAdmin, chọn database kltn_clinic
-# Import các file sau theo thứ tự:
-1. database/add_more_doctors.sql       # Thêm bác sĩ
-2. database/sample_data.sql           # Thêm dữ liệu mẫu
-3. database/add_symptoms_column.sql   # Cập nhật cấu trúc
+Sau `kltn_clinic.sql` (đã có sẵn dữ liệu mẫu), chọn database `kltn_clinic` → tab Import và import tiếp **đúng thứ tự**:
 ```
+1. database/payment_system.sql       # Bảng giá khám, giao dịch thanh toán
+2. database/payment_system_fix.sql   # Tiền thuốc, đơn giá thuốc, chuẩn hoá bảng giá
+3. database/logic_fixes.sql          # Nhật ký hoạt động, giờ check-in, chuẩn hoá dữ liệu
+4. database/bank_transfer.sql        # Xác nhận chuyển khoản VietQR
+5. database/doctor_leaves.sql        # Lịch nghỉ bác sĩ
+6. database/reviews.sql              # Đánh giá sau khám
+7. database/medicines.sql            # Danh mục thuốc & tồn kho
+8. database/queue_calling.sql        # Phòng khám + gọi số kiểu bệnh viện
+9. database/pharmacy_stock.sql           # Xuất kho khi thu tiền thuốc, nhập lại kho khi hoàn tiền
+10. database/smart_recommendation.sql     # Gợi ý lịch khám thông minh: từ khoá triệu chứng, tham số, nguồn đặt lịch
+11. database/doctor_shifts.sql            # Ca trực bác sĩ (lịch tuần + theo ngày)
+12. database/exam_type_payment_hold.sql   # Khám dịch vụ/BHYT, giữ chỗ 15 phút khi chuyển khoản
+13. database/registration_otp.sql         # Xác thực OTP khi đăng ký
+14. database/doctor_profiles.sql          # Hồ sơ bác sĩ cho trang tìm bác sĩ
+```
+Thiếu các file này thì chức năng thanh toán, thu ngân, hàng đợi sẽ báo lỗi. Lệnh cmd tương đương xem ở README.md, mục "Bước 2: Tạo Database".
 
 ---
 
@@ -125,7 +135,7 @@ DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=           # Để trống nếu không có password
 DB_NAME=kltn_clinic
-DB_PORT=3306
+DB_PORT=3307
 
 # JWT Secret (không nên thay đổi khi đã có dữ liệu)
 JWT_SECRET=thct-clinic-super-secure-jwt-secret-key-2024-authentication-system-minimum-256-bits
@@ -399,6 +409,23 @@ npm test
    - Mở browser trên điện thoại
    - Nhập: `http://192.168.x.x:3000`
    - Thay `192.168.x.x` bằng IP máy tính của bạn
+
+3. **Quét QR bằng camera điện thoại (cần https):**
+   Trình duyệt điện thoại chỉ cho mở camera trên trang `https`. Mở thêm một cửa sổ terminal:
+   ```bash
+   cd frontend
+   npm run start:https
+   ```
+   - Trên điện thoại mở: `https://192.168.x.x:3443`
+   - Lần đầu sẽ báo *"Kết nối không riêng tư"* (chứng chỉ tự tạo khi chạy thử) → bấm **Nâng cao** → **Tiếp tục truy cập**.
+   - Lệnh này mở một cổng https (file `frontend/scripts/https-proxy.js`) đứng trước web 3000 và backend 5000 – vẫn phải chạy `npm start` và backend như bình thường.
+   - Bản `http://localhost:3000` trên máy tính vẫn dùng bình thường song song.
+
+4. **Điện thoại không vào được?** Mở PowerShell bằng quyền Administrator trên máy tính:
+   ```powershell
+   New-NetFirewallRule -DisplayName "THCT Clinic dev" -Direction Inbound -Protocol TCP -LocalPort 3000,3443,5000 -Action Allow -Profile Private
+   ```
+   và đặt mạng Wi-Fi của máy tính là **Private** (Riêng tư).
 
 ---
 

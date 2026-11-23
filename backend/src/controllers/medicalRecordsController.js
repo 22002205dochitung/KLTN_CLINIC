@@ -2,21 +2,27 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 // Tạo kết nối database với promise
-const db = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-});
+// shared connection pool (one place for SSL, SQL mode and connection limits)
+const { pool: db } = require('../config/database');
 
 /**
  * Medical Records Controller
  * Handles all medical records operations for doctors, patients, and receptionists
  */
+
+/**
+ * A doctor may READ a record when they wrote it, or when the patient has (or had) an
+ * appointment with them – a treating doctor needs the patient's history.
+ * Write operations still require that the doctor owns the appointment.
+ */
+const doctorTreatsPatient = async (doctorId, record) => {
+    if (doctorId === record.doctor_id) return true;
+    const [rows] = await db.query(
+        'SELECT 1 FROM appointments WHERE doctor_id = ? AND patient_id = ? LIMIT 1',
+        [doctorId, record.patient_id]
+    );
+    return rows.length > 0;
+};
 
 /**
  * Get Checked-In Patients for Doctor
@@ -365,26 +371,62 @@ const createPrescriptions = async (req, res) => {
             }
         }
         
+        // Catalogue items: name/unit/price come from the medicine list (price is a snapshot,
+        // so later price changes do not alter this bill). Free-text items stay untracked.
+        const catalogueIds = [...new Set(prescriptions
+            .map(p => parseInt(p.medicine_id, 10))
+            .filter(id => Number.isInteger(id) && id > 0))];
+        const catalogue = new Map();
+        if (catalogueIds.length > 0) {
+            const [meds] = await connection.query(
+                `SELECT id, name, unit, price, stock, active FROM medicines WHERE id IN (${catalogueIds.map(() => '?').join(',')})`,
+                catalogueIds
+            );
+            meds.forEach(m => catalogue.set(m.id, m));
+            const missing = catalogueIds.find(id => !catalogue.has(id) || !catalogue.get(id).active);
+            if (missing) {
+                connection.release();
+                return res.status(400).json({
+                    success: false,
+                    error: { code: 'MEDICINE_NOT_AVAILABLE', message: 'Có thuốc không còn trong danh mục – vui lòng chọn lại' }
+                });
+            }
+        }
+
         // Start transaction
         await connection.beginTransaction();
         
         // Insert prescriptions
         const createdIds = [];
+        const warnings = [];
+        const requested = new Map(); // medicine_id -> total quantity in this prescription
         for (const prescription of prescriptions) {
+            const med = catalogue.get(parseInt(prescription.medicine_id, 10)) || null;
+            const quantity = parseInt(prescription.quantity, 10);
             const [result] = await connection.query(
                 `INSERT INTO prescriptions 
-                 (medical_record_id, medicine_name, dosage, quantity, instructions) 
-                 VALUES (?, ?, ?, ?, ?)`,
+                 (medical_record_id, medicine_id, medicine_name, dosage, quantity, unit, instructions, unit_price) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     medical_record_id,
-                    prescription.medicine_name.trim(),
+                    med ? med.id : null,
+                    med ? med.name : prescription.medicine_name.trim(),
                     prescription.dosage || '',
-                    prescription.quantity,
-                    prescription.instructions || ''
+                    quantity,
+                    med ? med.unit : (String(prescription.unit || '').trim().slice(0, 30) || null),
+                    prescription.instructions || '',
+                    med ? med.price : null
                 ]
             );
             createdIds.push(result.insertId);
+            if (med) requested.set(med.id, (requested.get(med.id) || 0) + quantity);
         }
+        requested.forEach((qty, id) => {
+            const med = catalogue.get(id);
+            if (qty > Number(med.stock)) {
+                warnings.push(`${med.name}: kê ${qty} ${med.unit} nhưng kho chỉ còn ${med.stock}`);
+            }
+        });
         
         await connection.commit();
         connection.release();
@@ -393,9 +435,12 @@ const createPrescriptions = async (req, res) => {
             success: true,
             data: {
                 prescriptionIds: createdIds,
-                count: createdIds.length
+                count: createdIds.length,
+                warnings
             },
-            message: 'Kê đơn thuốc thành công'
+            message: warnings.length
+                ? `Kê đơn thuốc thành công. Lưu ý kho: ${warnings.join('; ')}`
+                : 'Kê đơn thuốc thành công'
         });
         
     } catch (error) {
@@ -651,18 +696,21 @@ const completeAppointment = async (req, res) => {
 const getPatientMedicalHistory = async (req, res) => {
     try {
         const patient_id = req.user.id; // user_id of the patient
-        
+
         // Query medical records for this patient
         const [records] = await db.query(`
-            SELECT 
+            SELECT
                 mr.id as medical_record_id,
                 mr.symptoms,
                 mr.diagnosis,
                 mr.note,
                 mr.reexamination_date,
+                DATE_FORMAT(mr.reexamination_date, '%Y-%m-%d') as reexamination_ymd,
                 mr.created_at,
                 a.appointment_date,
                 a.time_slot,
+                d.id as doctor_id,
+                dept.id as department_id,
                 u.fullname as doctor_fullname,
                 dept.name as department_name
             FROM medical_records mr
@@ -725,7 +773,15 @@ const getMedicalRecordDetails = async (req, res) => {
                 a.patient_id,
                 a.doctor_id,
                 patient_user.fullname as patient_fullname,
+                patient_user.phone as patient_phone,
+                patient_user.date_of_birth as patient_dob,
+                patient_user.gender as patient_gender,
+                patient_user.allergies as patient_allergies,
+                a.exam_type,
+                a.insurance_number,
                 doctor_user.fullname as doctor_fullname,
+                d.degree as doctor_degree,
+                d.room as doctor_room,
                 dept.name as department_name
             FROM medical_records mr
             JOIN appointments a ON mr.appointment_id = a.id
@@ -767,7 +823,7 @@ const getMedicalRecordDetails = async (req, res) => {
                 [userId]
             );
             
-            if (doctorRecord.length === 0 || doctorRecord[0].id !== record.doctor_id) {
+            if (doctorRecord.length === 0 || !(await doctorTreatsPatient(doctorRecord[0].id, record))) {
                 return res.status(403).json({
                     success: false,
                     error: {
@@ -776,8 +832,8 @@ const getMedicalRecordDetails = async (req, res) => {
                     }
                 });
             }
-        } else if (userRole === 'receptionist') {
-            // Receptionist can view any record (no additional check needed)
+        } else if (userRole === 'receptionist' || userRole === 'admin') {
+            // Front desk and admin can view any record
         } else {
             // Other roles not allowed
             return res.status(403).json({
@@ -863,7 +919,7 @@ const getPrescriptions = async (req, res) => {
                 [userId]
             );
             
-            if (doctorRecord.length === 0 || doctorRecord[0].id !== record.doctor_id) {
+            if (doctorRecord.length === 0 || !(await doctorTreatsPatient(doctorRecord[0].id, record))) {
                 return res.status(403).json({
                     success: false,
                     error: {
@@ -872,8 +928,8 @@ const getPrescriptions = async (req, res) => {
                     }
                 });
             }
-        } else if (userRole === 'receptionist') {
-            // Receptionist can view any prescriptions
+        } else if (userRole === 'receptionist' || userRole === 'admin') {
+            // Front desk and admin can view any prescriptions
         } else {
             return res.status(403).json({
                 success: false,
@@ -891,6 +947,7 @@ const getPrescriptions = async (req, res) => {
                 medicine_name,
                 dosage,
                 quantity,
+                unit,
                 instructions
             FROM prescriptions
             WHERE medical_record_id = ?
@@ -962,7 +1019,7 @@ const getPatientRecordsByReceptionist = async (req, res) => {
             JOIN appointments a ON mr.appointment_id = a.id
             JOIN doctors d ON a.doctor_id = d.id
             JOIN users u ON d.user_id = u.id
-            JOIN departments dept ON d.department_id = dept.id
+            LEFT JOIN departments dept ON d.department_id = dept.id
             WHERE a.patient_id = ?
             ORDER BY a.appointment_date DESC
         `, [patient_id]);
@@ -988,7 +1045,110 @@ const getPatientRecordsByReceptionist = async (req, res) => {
     }
 };
 
+/**
+ * Doctor's patients who were asked to come back (follow-up / tái khám)
+ *
+ * Route: GET /api/medical-records/doctor/follow-ups?days=30
+ * Auth: Doctor only
+ *
+ * Re-exam dates from 30 days ago up to `days` ahead (1-90, default 30). A follow-up counts as
+ * booked only when the patient booked this doctor AFTER the visit that set the re-exam date
+ * (same rule as the patient dashboard), so older bookings are not mistaken for it.
+ */
+const getDoctorFollowUps = async (req, res) => {
+    try {
+        const days = Math.min(Math.max(parseInt(req.query.days, 10) || 30, 1), 90);
+
+        const [doctorRecord] = await db.query('SELECT id FROM doctors WHERE user_id = ?', [req.user.id]);
+        if (doctorRecord.length === 0) {
+            return res.status(403).json({
+                success: false,
+                error: { code: 'NOT_A_DOCTOR', message: 'Tài khoản chưa được gán hồ sơ bác sĩ' }
+            });
+        }
+        const doctorId = doctorRecord[0].id;
+
+        const [rows] = await db.query(`
+            SELECT
+                mr.id AS medical_record_id,
+                DATE_FORMAT(mr.reexamination_date, '%Y-%m-%d') AS reexamination_ymd,
+                mr.diagnosis,
+                mr.created_at AS record_created_at,
+                a.id AS visit_appointment_id,
+                DATE_FORMAT(a.appointment_date, '%Y-%m-%d') AS visit_date,
+                p.id AS patient_id,
+                p.fullname AS patient_name,
+                p.phone AS patient_phone,
+                (SELECT b.id FROM appointments b
+                  WHERE b.patient_id = a.patient_id
+                    AND b.doctor_id = a.doctor_id
+                    AND b.id <> a.id
+                    AND b.appointment_date > a.appointment_date
+                    -- attended, or still upcoming (a past 'booked' one is a no-show)
+                    AND (b.status = 'completed'
+                         OR (b.status IN ('booked', 'checked_in') AND b.appointment_date >= CURDATE()))
+                    AND b.created_at >= mr.created_at
+                  ORDER BY b.appointment_date ASC, b.time_slot ASC
+                  LIMIT 1) AS followup_appointment_id
+            FROM medical_records mr
+            JOIN appointments a ON a.id = mr.appointment_id
+            JOIN users p ON p.id = a.patient_id
+            WHERE a.doctor_id = ?
+              AND mr.reexamination_date IS NOT NULL
+              AND mr.reexamination_date BETWEEN DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+                                            AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
+            ORDER BY mr.reexamination_date ASC, p.fullname ASC
+        `, [doctorId, days]);
+
+        // Details of the follow-up bookings found above
+        const followupIds = rows.map((r) => r.followup_appointment_id).filter(Boolean);
+        const followups = {};
+        if (followupIds.length > 0) {
+            const [fRows] = await db.query(
+                `SELECT id, DATE_FORMAT(appointment_date, '%Y-%m-%d') AS appointment_date, time_slot, status
+                 FROM appointments WHERE id IN (${followupIds.map(() => '?').join(',')})`,
+                followupIds
+            );
+            fRows.forEach((f) => { followups[f.id] = f; });
+        }
+
+        const [[{ today }]] = await db.query("SELECT DATE_FORMAT(CURDATE(), '%Y-%m-%d') AS today");
+
+        const items = rows.map((r) => {
+            const f = r.followup_appointment_id ? followups[r.followup_appointment_id] : null;
+            let state;
+            if (f && f.status === 'completed') state = 'done';
+            else if (f) state = 'booked';
+            else if (r.reexamination_ymd < today) state = 'overdue';
+            else state = 'pending';
+            return {
+                medical_record_id: r.medical_record_id,
+                reexamination_date: r.reexamination_ymd,
+                diagnosis: r.diagnosis,
+                visit_date: r.visit_date,
+                patient_id: r.patient_id,
+                patient_name: r.patient_name,
+                patient_phone: r.patient_phone,
+                state,
+                followup: f || null
+            };
+        });
+
+        const summary = { total: items.length, pending: 0, overdue: 0, booked: 0, done: 0 };
+        items.forEach((i) => { summary[i.state] += 1; });
+
+        res.json({ success: true, data: { today, days, summary, items } });
+    } catch (error) {
+        console.error('Get doctor follow-ups error:', error);
+        res.status(500).json({
+            success: false,
+            error: { code: 'INTERNAL_ERROR', message: 'Không thể tải danh sách hẹn tái khám' }
+        });
+    }
+};
+
 module.exports = {
+    getDoctorFollowUps,
     getCheckedInPatients,
     createMedicalRecord,
     createPrescriptions,

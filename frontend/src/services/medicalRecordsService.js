@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_ORIGIN } from '../config/api';
 
 /**
  * Medical Records Service
@@ -9,7 +10,7 @@ import axios from 'axios';
  * API Base URL: http://localhost:5000
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = API_ORIGIN; // same backend as the rest of the app (config/api.js)
 const MEDICAL_RECORDS_API = `${API_BASE_URL}/api/medical-records`;
 const APPOINTMENTS_API = `${API_BASE_URL}/api/appointments`;
 
@@ -189,7 +190,9 @@ export const getMedicalRecordDetails = async (medicalRecordId) => {
     
     // Extract data from response
     if (response.data && response.data.success) {
-      return response.data.data || response.data.medicalRecord || response.data;
+      const d = response.data.data || response.data.medicalRecord || response.data;
+      // API shape: { data: { record } }
+      return d && d.record ? d.record : d;
     }
     
     return response.data;
@@ -216,7 +219,10 @@ export const getPrescriptions = async (medicalRecordId) => {
     
     // Extract data from response
     if (response.data && response.data.success) {
-      return response.data.data || response.data.prescriptions || [];
+      const d = response.data.data || response.data;
+      // API shape: { data: { prescriptions, count } }
+      if (Array.isArray(d)) return d;
+      return Array.isArray(d?.prescriptions) ? d.prescriptions : [];
     }
     
     // If response.data is already an array

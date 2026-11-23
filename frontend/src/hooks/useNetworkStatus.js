@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { API_BASE } from '../config/api';
 
 /**
  * Custom Hook for Network Status Detection and Offline Mode Handling
@@ -182,7 +183,7 @@ export const usePingTest = (url = null, interval = 30000) => {
 
     setPingStatus(prev => ({ ...prev, checking: true }));
 
-    const pingUrl = url || process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
+    const pingUrl = url || API_BASE;
     const startTime = Date.now();
 
     try {

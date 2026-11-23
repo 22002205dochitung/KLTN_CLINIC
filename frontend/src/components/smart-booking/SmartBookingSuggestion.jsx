@@ -1,96 +1,139 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import './SmartBookingSuggestion.css';
 
-/**
- * Smart Booking Suggestion Component
- * AI-powered appointment booking with symptom analysis
- */
+import { API_BASE } from '../../config/api';
+
+const DEPARTMENT_KEYWORDS = {
+  'Tim mạch': ['đau ngực', 'tim đập nhanh', 'huyết áp', 'khó thở', 'choáng váng', 'ngất xỉu', 'mệt mỏi'],
+  'Tiêu hóa': ['đau bụng', 'tiêu chảy', 'táo bón', 'nôn mửa', 'ợ hơi', 'đầy hơi', 'buồn nôn', 'dạ dày'],
+  'Hô hấp': ['ho', 'khó thở', 'đau họng', 'sổ mũi', 'nghẹt mũi', 'viêm phổi', 'hen suyễn', 'sốt'],
+  'Thần kinh': ['đau đầu', 'chóng mặt', 'mất ngủ', 'căng thẳng', 'lo âu', 'run tay', 'tê liệt', 'buồn ngủ'],
+  'Nội tiết': ['tiểu đường', 'tăng cân', 'giảm cân', 'khát nước', 'vô sinh', 'mệt mỏi'],
+  'Cơ xương khớp': ['đau khớp', 'đau lưng', 'đau cổ', 'gãy xương', 'bong gân', 'thoái hóa', 'khớp'],
+  'Da liễu': ['ngứa', 'phát ban', 'mụn', 'nấm', 'viêm da', 'dị ứng da', 'da đỏ'],
+  'Tai mũi họng': ['đau tai', 'ù tai', 'nghe kém', 'chảy máu cam', 'viêm amidan', 'ngạt mũi'],
+  'Mắt': ['mờ mắt', 'đau mắt', 'ngứa mắt', 'đỏ mắt', 'chảy nước mắt', 'mỏi mắt'],
+  'Răng hàm mặt': ['đau răng', 'sưng lợi', 'chảy máu chân răng', 'sâu răng', 'nướu'],
+  'Nhi': ['sốt', 'tiêu chảy ở trẻ', 'ho ở trẻ', 'biếng ăn', 'chậm phát triển', 'đau bụng trẻ'],
+  'Phụ sản': ['mang thai', 'khám thai', 'đau bụng dưới', 'rong kinh', 'vô sinh', 'rối loạn kinh nguyệt'],
+  'Nội tổng quát': ['sốt', 'mệt mỏi', 'khó ngủ', 'ho', 'đau bụng', 'chán ăn', 'mệt', 'đau người']
+};
+
+const getDepartmentLabel = (name) => {
+  if (!name) return 'Nội tổng quát';
+  return name.charAt(0).toUpperCase() + name.slice(1);
+};
+
 const SmartBookingSuggestion = ({ onBookAppointment, onClose }) => {
-  const [step, setStep] = useState(1); // 1: symptoms, 2: suggestions, 3: confirm
+  const [step, setStep] = useState(1);
   const [symptoms, setSymptoms] = useState('');
   const [suggestions, setSuggestions] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [doctors, setDoctors] = useState([]);
 
-  // Symptom to department mapping (simple AI logic)
-  const symptomKeywords = {
-    'tim mạch': ['đau ngực', 'tim đập nhanh', 'huyết áp', 'khó thở', 'mệt mỏi', 'choáng váng', 'ngất xỉu'],
-    'tiêu hóa': ['đau bụng', 'tiêu chảy', 'táo bón', 'nôn mửa', 'ợ hơi', 'đầy hơi', 'gan', 'dạ dày'],
-    'hô hấp': ['ho', 'khó thở', 'đau họng', 'sổ mũi', 'nghẹt mũi', 'viêm phổi', 'hen suyễn'],
-    'thần kinh': ['đau đầu', 'chóng mặt', 'mất ngủ', 'căng thẳng', 'lo âu', 'run tay', 'tê liệt'],
-    'nội tiết': ['tiểu đường', 'tăng cân', 'giảm cân', 'khát nước', 'mệt mỏi', 'vô sinh'],
-    'cơ xương khớp': ['đau khớp', 'đau lưng', 'đau cổ', 'gãy xương', 'bong gân', 'thoái hóa'],
-    'da liễu': ['ngứa', 'phát ban', 'mụn', 'nấm', 'viêm da', 'dị ứng da'],
-    'tai mũi họng': ['đau tai', 'ù tai', 'nghe kém', 'chảy máu cam', 'viêm amidan'],
-    'mắt': ['mờ mắt', 'đau mắt', 'ngứa mắt', 'đỏ mắt', 'chảy nước mắt'],
-    'răng hàm mặt': ['đau răng', 'sưng lợi', 'chảy máu chân răng', 'sâu răng'],
-    'nhi': ['sốt', 'tiêu chảy ở trẻ', 'ho ở trẻ', 'biếng ăn', 'chậm phát triển'],
-    'sản': ['mang thai', 'khám thai', 'đau bụng dưới', 'rong kinh', 'vô sinh']
+  useEffect(() => {
+    loadDepartmentsAndDoctors();
+  }, []);
+
+  const loadDepartmentsAndDoctors = async () => {
+    try {
+      const response = await axios.get(`${API_BASE}/appointments/doctors`);
+      if (response.data.success) {
+        setDepartments(response.data.departments || []);
+        setDoctors(response.data.doctors || []);
+      }
+    } catch (error) {
+      console.error('Error loading doctors data:', error);
+    }
+  };
+
+  const getDepartmentByName = (departmentName) => {
+    if (!departmentName) return null;
+
+    return departments.find((dept) => {
+      const normalizedDeptName = dept.name?.toLowerCase() || '';
+      const normalizedTarget = departmentName.toLowerCase();
+      return normalizedDeptName === normalizedTarget || normalizedDeptName.includes(normalizedTarget) || normalizedTarget.includes(normalizedDeptName);
+    }) || null;
   };
 
   const analyzeSymptomsAI = (symptomText) => {
     const text = symptomText.toLowerCase();
-    const scores = {};
+    const scores = [];
 
-    // Calculate matching score for each department
-    Object.keys(symptomKeywords).forEach(dept => {
-      let score = 0;
-      symptomKeywords[dept].forEach(keyword => {
-        if (text.includes(keyword)) {
-          score += 1;
+    Object.entries(DEPARTMENT_KEYWORDS).forEach(([departmentName, keywords]) => {
+      let matchingCount = 0;
+      const matchedKeywords = [];
+
+      keywords.forEach((keyword) => {
+        if (text.includes(keyword.toLowerCase())) {
+          matchingCount += 1;
+          matchedKeywords.push(keyword);
         }
       });
-      if (score > 0) {
-        scores[dept] = score;
+
+      if (matchingCount > 0) {
+        const deptInfo = getDepartmentByName(departmentName) || {
+          id: null,
+          name: departmentName,
+          doctor_count: 0
+        };
+
+        scores.push({
+          department: departmentName,
+          departmentId: deptInfo.id,
+          confidence: Math.min(95, 60 + matchingCount * 12),
+          reason: `Phát hiện ${matchingCount} triệu chứng phù hợp với ${departmentName}`,
+          matchedKeywords: matchedKeywords.slice(0, 3)
+        });
       }
     });
 
-    // Sort by score
-    const sorted = Object.entries(scores)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3); // Top 3
-
-    if (sorted.length === 0) {
+    if (!scores.length) {
+      const fallbackDept = departments.find((dept) => dept.name?.toLowerCase().includes('nội')) || departments[0];
       return [{
-        department: 'Nội tổng quát',
+        department: fallbackDept?.name || 'Nội tổng quát',
+        departmentId: fallbackDept?.id || null,
         confidence: 70,
-        reason: 'Triệu chứng chung, nên khám nội tổng quát để được tư vấn'
+        reason: 'Triệu chứng chung, nên khám nội tổng quát để được tư vấn sơ bộ.',
+        matchedKeywords: ['triệu chứng chung']
       }];
     }
 
-    return sorted.map(([dept, score]) => ({
-      department: dept.charAt(0).toUpperCase() + dept.slice(1),
-      confidence: Math.min(95, 60 + score * 10),
-      reason: `Phát hiện ${score} triệu chứng liên quan đến chuyên khoa này`
-    }));
+    return scores
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, 3);
   };
 
-  const getRecommendedDoctors = (department) => {
-    // Mock data - trong thực tế sẽ query từ database
-    const doctors = {
-      'Tim mạch': [
-        { name: 'BS. Nguyễn Văn A', experience: '15 năm', rating: 4.8 },
-        { name: 'BS. Trần Thị B', experience: '12 năm', rating: 4.7 }
-      ],
-      'Tiêu hóa': [
-        { name: 'BS. Lê Văn C', experience: '10 năm', rating: 4.6 }
-      ],
-      'Nội tổng quát': [
-        { name: 'BS. Phạm Thị D', experience: '8 năm', rating: 4.5 }
-      ]
-    };
+  const getRecommendedDoctors = (departmentName) => {
+    if (!departmentName) {
+      return doctors.slice(0, 2);
+    }
 
-    return doctors[department] || doctors['Nội tổng quát'];
+    const departmentDoctors = doctors.filter((doctor) => {
+      const deptName = (doctor.department_name || '').toLowerCase();
+      const target = departmentName.toLowerCase();
+      return deptName === target || deptName.includes(target) || target.includes(deptName);
+    });
+
+    return departmentDoctors.length ? departmentDoctors.slice(0, 2) : doctors.slice(0, 2);
   };
 
   const getOptimalTime = () => {
-    const now = new Date();
-    const tomorrow = new Date(now);
+    const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
+    const date = tomorrow.toISOString().split('T')[0];
+    const isUrgent = /cấp cứu|đau dữ dội|đau rất nhiều|khó thở nghiêm trọng/.test(symptoms.toLowerCase());
+
     return {
-      date: tomorrow.toISOString().split('T')[0],
-      time: '08:00',
-      reason: 'Buổi sáng ít người, bác sĩ tập trung tốt hơn'
+      date,
+      time: isUrgent ? '07:30' : '08:00',
+      reason: isUrgent
+        ? 'Khẩn cấp nên ưu tiên khám sớm để được đánh giá kịp thời.'
+        : 'Buổi sáng ít người, bác sĩ có thời gian thăm khám kỹ hơn.'
     };
   };
 
@@ -101,34 +144,41 @@ const SmartBookingSuggestion = ({ onBookAppointment, onClose }) => {
     }
 
     setLoading(true);
-    
-    // Simulate AI processing
+
     setTimeout(() => {
       const analysis = analyzeSymptomsAI(symptoms);
       const topSuggestion = analysis[0];
-      
+      const recommendationDoctors = getRecommendedDoctors(topSuggestion.department);
+
       setSuggestions({
         departments: analysis,
-        doctors: getRecommendedDoctors(topSuggestion.department),
+        doctors: recommendationDoctors,
         optimalTime: getOptimalTime(),
-        urgency: symptoms.toLowerCase().includes('đau nhiều') || symptoms.toLowerCase().includes('cấp cứu') 
-          ? 'Cao - Nên khám ngay' 
+        urgency: /cấp cứu|đau dữ dội|khó thở|choáng váng|ngất/.test(symptoms.toLowerCase())
+          ? 'Cao - Nên khám ngay'
           : 'Bình thường'
       });
-      
+
       setLoading(false);
       setStep(2);
-    }, 1500);
+    }, 1200);
   };
 
   const handleBooking = () => {
-    const topDept = suggestions.departments[0];
+    const topDept = suggestions?.departments?.[0];
+    const topDoctor = suggestions?.doctors?.[0];
+
+    if (!topDept) return;
+
     if (onBookAppointment) {
       onBookAppointment({
+        departmentId: topDept.departmentId || null,
         department: topDept.department,
-        symptoms: symptoms,
-        suggestedDate: suggestions.optimalTime.date,
-        suggestedTime: suggestions.optimalTime.time
+        doctorId: topDoctor?.doctor_id || null,
+        doctorName: topDoctor ? `${topDoctor.degree || 'BS'} ${topDoctor.full_name}` : null,
+        appointmentDate: suggestions.optimalTime.date,
+        timeSlot: suggestions.optimalTime.time,
+        symptoms: symptoms.trim()
       });
     }
   };
@@ -137,32 +187,32 @@ const SmartBookingSuggestion = ({ onBookAppointment, onClose }) => {
     <div className="smart-booking-container">
       <div className="smart-booking-header">
         <h2>🤖 Gợi ý khám thông minh</h2>
-        <p>AI sẽ phân tích triệu chứng và gợi ý chuyên khoa phù hợp</p>
+        <p>AI phân tích triệu chứng và gợi ý khoa, bác sĩ, thời gian phù hợp nhất</p>
         {onClose && (
           <button className="close-btn" onClick={onClose}>✕</button>
         )}
       </div>
 
-      {/* Step 1: Input Symptoms */}
       {step === 1 && (
         <div className="symptoms-input-section">
           <h3>Bước 1: Mô tả triệu chứng của bạn</h3>
           <textarea
             className="symptoms-textarea"
-            placeholder="Ví dụ: Tôi bị đau đầu, chóng mặt và buồn nôn từ 2 ngày nay..."
+            placeholder="Ví dụ: Tôi bị đau ngực, khó thở và mệt mỏi trong 2 ngày qua..."
             value={symptoms}
             onChange={(e) => setSymptoms(e.target.value)}
             rows="6"
           />
-          
+
           <div className="common-symptoms">
-            <p><strong>Gợi ý:</strong> Nhấn vào triệu chứng phổ biến</p>
+            <p><strong>Gợi ý:</strong> Chọn triệu chứng phổ biến</p>
             <div className="symptom-tags">
-              {['Đau đầu', 'Sốt', 'Ho', 'Đau bụng', 'Khó thở', 'Đau ngực', 'Mệt mỏi'].map(tag => (
+              {['Đau đầu', 'Sốt', 'Ho', 'Đau bụng', 'Khó thở', 'Đau ngực', 'Mệt mỏi'].map((tag) => (
                 <button
                   key={tag}
+                  type="button"
                   className="symptom-tag"
-                  onClick={() => setSymptoms(symptoms + (symptoms ? ', ' : '') + tag.toLowerCase())}
+                  onClick={() => setSymptoms((prev) => `${prev}${prev ? ', ' : ''}${tag.toLowerCase()}`)}
                 >
                   {tag}
                 </button>
@@ -170,7 +220,8 @@ const SmartBookingSuggestion = ({ onBookAppointment, onClose }) => {
             </div>
           </div>
 
-          <button 
+          <button
+            type="button"
             className="btn-analyze"
             onClick={handleAnalyze}
             disabled={loading}
@@ -180,53 +231,58 @@ const SmartBookingSuggestion = ({ onBookAppointment, onClose }) => {
         </div>
       )}
 
-      {/* Step 2: Show Suggestions */}
       {step === 2 && suggestions && (
         <div className="suggestions-section">
           <h3>Bước 2: Kết quả phân tích AI</h3>
-          
-          {/* Urgency Alert */}
+
           {suggestions.urgency === 'Cao - Nên khám ngay' && (
             <div className="urgency-alert">
               ⚠️ <strong>Khẩn cấp:</strong> Triệu chứng của bạn cần được khám sớm!
             </div>
           )}
 
-          {/* Department Suggestions */}
           <div className="dept-suggestions">
             <h4>Chuyên khoa gợi ý:</h4>
             {suggestions.departments.map((dept, idx) => (
-              <div key={idx} className={`dept-card ${idx === 0 ? 'recommended' : ''}`}>
+              <div key={`${dept.department}-${idx}`} className={`dept-card ${idx === 0 ? 'recommended' : ''}`}>
                 <div className="dept-header">
-                  <span className="dept-name">{dept.department}</span>
-                  <span className="confidence-badge" style={{
-                    backgroundColor: dept.confidence >= 80 ? '#10b981' : dept.confidence >= 60 ? '#f59e0b' : '#6b7280'
-                  }}>
+                  <span className="dept-name">{getDepartmentLabel(dept.department)}</span>
+                  <span
+                    className="confidence-badge"
+                    style={{
+                      backgroundColor: dept.confidence >= 80 ? '#10b981' : dept.confidence >= 60 ? '#f59e0b' : '#6b7280'
+                    }}
+                  >
                     {dept.confidence}% phù hợp
                   </span>
                 </div>
                 <p className="dept-reason">{dept.reason}</p>
+                {dept.matchedKeywords && (
+                  <div className="matched-keywords">
+                    {dept.matchedKeywords.map((keyword, index) => (
+                      <span key={`${keyword}-${index}`} className="keyword-chip">{keyword}</span>
+                    ))}
+                  </div>
+                )}
                 {idx === 0 && <span className="recommended-badge">⭐ Khuyến nghị</span>}
               </div>
             ))}
           </div>
 
-          {/* Doctor Suggestions */}
           <div className="doctor-suggestions">
             <h4>Bác sĩ đề xuất:</h4>
             {suggestions.doctors.map((doctor, idx) => (
-              <div key={idx} className="doctor-card">
+              <div key={`${doctor.doctor_id || idx}`} className="doctor-card">
                 <div className="doctor-avatar">👨‍⚕️</div>
                 <div className="doctor-info">
-                  <strong>{doctor.name}</strong>
-                  <p>Kinh nghiệm: {doctor.experience}</p>
-                  <p>⭐ {doctor.rating}/5.0</p>
+                  <strong>{doctor.degree || 'BS'} {doctor.full_name}</strong>
+                  <p>Khoa: {doctor.department_name || 'Chuyên khoa phù hợp'}</p>
+                  <p>⭐ {doctor.rating || '4.8'}/5.0</p>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Time Suggestion */}
           <div className="time-suggestion">
             <h4>⏰ Thời gian khám tối ưu:</h4>
             <div className="time-card">
@@ -237,10 +293,10 @@ const SmartBookingSuggestion = ({ onBookAppointment, onClose }) => {
           </div>
 
           <div className="action-buttons">
-            <button className="btn-back" onClick={() => setStep(1)}>
+            <button type="button" className="btn-back" onClick={() => setStep(1)}>
               ← Sửa triệu chứng
             </button>
-            <button className="btn-book" onClick={handleBooking}>
+            <button type="button" className="btn-book" onClick={handleBooking}>
               📅 Đặt lịch ngay
             </button>
           </div>

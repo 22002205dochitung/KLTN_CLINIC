@@ -359,7 +359,7 @@ const ProfileEdit = ({ onSave, onCancel }) => {
             {errors.email && <span className="error-text" id="email-error" role="alert">{errors.email}</span>}
             {formData.email !== originalData.email && !errors.email && (
               <span className="info-text">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3182ce" strokeWidth="2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#108578" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/>
                   <path d="m9,12 2,2 4,-4"/>
                 </svg>

@@ -1,0 +1,454 @@
+/* Bank transfer (VietQR) panel */
+.btqr {
+  --btqr-accent: #108578;
+  --btqr-accent-soft: #d9f5f0;
+  --btqr-ink: #0f172a;
+  --btqr-muted: #64748b;
+  --btqr-line: #e2e8f0;
+  margin: 20px 0;
+  border: 1px solid var(--btqr-line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  text-align: left;
+  color: var(--btqr-ink);
+}
+
+.btqr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, #108578 0%, #0e7490 100%);
+  color: #fff;
+}
+
+.btqr-eyebrow {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.btqr-amount {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.btqr-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.btqr-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fde68a;
+  box-shadow: 0 0 0 0 rgba(253, 230, 138, 0.7);
+  animation: btqr-pulse 1.8s infinite;
+}
+
+@keyframes btqr-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(253, 230, 138, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(253, 230, 138, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(253, 230, 138, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btqr-dot { animation: none; }
+}
+
+.btqr-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  padding: 22px;
+  align-items: start;
+}
+
+.btqr-qr {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--btqr-line);
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.btqr-qr img {
+  width: 240px;
+  height: 240px;
+  max-width: 100%;
+  border-radius: 10px;
+  background: #fff;
+  object-fit: contain;
+}
+
+.btqr-qr figcaption {
+  max-width: 240px;
+  font-size: 12px;
+  color: var(--btqr-muted);
+  text-align: center;
+}
+
+.btqr-download {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--btqr-accent);
+  text-decoration: none;
+}
+
+.btqr-download:hover {
+  text-decoration: underline;
+}
+
+.btqr-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.btqr-row {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--btqr-line);
+}
+
+.btqr-row.is-highlight {
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px solid #b9ece5;
+  border-radius: 10px;
+  background: #f1faf8;
+}
+
+.btqr-label {
+  font-size: 13px;
+  color: var(--btqr-muted);
+}
+
+.btqr-value {
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.btqr-value.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.03em;
+}
+
+.btqr-row.is-highlight .btqr-value {
+  color: var(--btqr-accent);
+  font-size: 17px;
+}
+
+.btqr-copy {
+  padding: 5px 10px;
+  border: 1px solid var(--btqr-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--btqr-accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btqr-copy:hover {
+  border-color: var(--btqr-accent);
+  background: var(--btqr-accent-soft);
+}
+
+.btqr-copy:focus-visible {
+  outline: 2px solid var(--btqr-accent);
+  outline-offset: 2px;
+}
+
+.btqr-copy.is-copied {
+  border-color: #86efac;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.btqr-steps {
+  margin: 16px 0 0;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.btqr-steps li + li {
+  margin-top: 4px;
+}
+
+/* Small notices (loading, paid, errors) */
+.btqr-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+  text-align: left;
+}
+
+.btqr-notice.is-paid {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.btqr-notice.is-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.btqr-paid-icon {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #10b981;
+  color: #fff;
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .btqr-body {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .btqr-qr {
+    justify-self: center;
+  }
+
+  .btqr-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .btqr-label {
+    grid-column: 1 / -1;
+  }
+
+  .btqr-amount {
+    font-size: 24px;
+  }
+}
+
+/* Banking-app shortcuts: shown on phones / touch screens, hidden on desktop where the QR is scanned */
+.btqr-apps {
+  display: none;
+  padding: 16px 22px 0;
+}
+
+@media (hover: none), (max-width: 768px) {
+  .btqr-apps {
+    display: block;
+  }
+}
+
+.btqr-apps-title {
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.btqr-apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.btqr-app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid #b9ece5;
+  border-radius: 10px;
+  background: #f1faf8;
+  color: #108578;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+.btqr-app:active {
+  background: #d9f5f0;
+}
+
+.btqr-app:focus-visible {
+  outline: 2px solid #108578;
+  outline-offset: 2px;
+}
+
+.btqr-apps-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* "I have transferred" action and waiting state */
+.btqr-status.is-reported .btqr-dot {
+  background: #93c5fd;
+}
+
+.btqr-footer {
+  padding: 0 22px 22px;
+}
+
+.btqr-confirm {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #108578 0%, #0e7490 100%);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(16, 133, 120, 0.25);
+}
+
+.btqr-confirm:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.btqr-confirm:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.btqr-confirm:focus-visible {
+  outline: 3px solid #8edfd4;
+  outline-offset: 2px;
+}
+
+.btqr-confirm-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+}
+
+.btqr-confirm-error {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #b91c1c;
+  text-align: center;
+}
+
+.btqr-reported {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 14px;
+}
+
+.btqr-spinner {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #bfdbfe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: btqr-spin 0.9s linear infinite;
+}
+
+@keyframes btqr-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btqr-spinner { animation: none; }
+}
+
+@media (max-width: 640px) {
+  .btqr-footer {
+    padding: 0 16px 16px;
+  }
+}
+
+/* Phones: keep account number / description on one line, tighter panel */
+@media (max-width: 480px) {
+  .btqr {
+    margin: 12px 0;
+    border-radius: 14px;
+  }
+
+  .btqr-header {
+    padding: 14px 16px;
+  }
+
+  .btqr-apps {
+    padding: 14px 16px 0;
+  }
+
+  .btqr-value {
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .btqr-value.mono {
+    white-space: nowrap;
+  }
+
+  .btqr-reported {
+    align-items: flex-start;
+  }
+}
+
+/* In a narrow box (e.g. an appointment card) put the QR above the account details,
+   otherwise the details column was squeezed to a few letters per line */
+.btqr {
+  container-type: inline-size;
+}
+
+@container (max-width: 640px) {
+  .btqr-body {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .btqr-details {
+    width: 100%;
+  }
+}

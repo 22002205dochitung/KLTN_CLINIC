@@ -1,0 +1,143 @@
+.payment-summary {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.summary-header {
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.summary-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+  font-weight: 600;
+}
+
+.summary-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed #e0e0e0;
+}
+
+.summary-section:last-of-type {
+  border-bottom: none;
+}
+
+.summary-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.5px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  gap: 16px;
+}
+
+.summary-row .label {
+  font-size: 14px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.summary-row .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  text-align: right;
+}
+
+.summary-row.highlight {
+  background: #f1f8f4;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+.summary-row.highlight .value {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.summary-total {
+  background: linear-gradient(135deg, #16a34a, #45a049);
+  color: white;
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.total-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.total-amount {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.payment-note {
+  background: #fff3e0;
+  border-left: 4px solid #f97316;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.payment-note strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #f97316;
+  font-size: 14px;
+}
+
+.payment-note ul {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+.payment-note li {
+  margin-bottom: 6px;
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .payment-summary {
+    padding: 16px;
+  }
+
+  .summary-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .summary-row .value {
+    text-align: left;
+  }
+
+  .total-amount {
+    font-size: 20px;
+  }
+}

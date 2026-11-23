@@ -91,7 +91,7 @@
 
 .search-box input:focus {
   outline: none;
-  border-color: #87CEEB;
+  border-color: #b9ece5;
   box-shadow: 0 0 0 3px rgba(135, 206, 235, 0.1);
 }
 
@@ -117,9 +117,9 @@
 }
 
 .filter-btn.active {
-  background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+  background: linear-gradient(135deg, #b9ece5 0%, #4682B4 100%);
   color: white;
-  border-color: #87CEEB;
+  border-color: #b9ece5;
   box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
 }
 
@@ -137,7 +137,7 @@
 }
 
 .users-table thead {
-  background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+  background: linear-gradient(135deg, #b9ece5 0%, #4682B4 100%);
   color: white;
 }
 
@@ -209,7 +209,7 @@
 
 .role-select:focus {
   outline: none;
-  border-color: #87CEEB;
+  border-color: #b9ece5;
 }
 
 .btn-delete {
@@ -348,7 +348,7 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #87CEEB;
+  border-color: #b9ece5;
   box-shadow: 0 0 0 3px rgba(135, 206, 235, 0.1);
 }
 

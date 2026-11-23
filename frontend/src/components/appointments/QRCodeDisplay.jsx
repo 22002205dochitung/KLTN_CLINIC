@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import './QRCodeDisplay.css';
+import { bookingCodeOf } from './bookingCode';
 
 /**
  * QRCodeDisplay Component - Display appointment QR code
@@ -58,7 +59,7 @@ const QRCodeDisplay = ({ appointment, onDownload }) => {
         <div className="appointment-info">
           <div className="info-row">
             <span className="label">Mã lịch hẹn:</span>
-            <strong>#{appointment.id}</strong>
+            <strong>{bookingCodeOf(appointment)}</strong>
           </div>
           <div className="info-row">
             <span className="label">Ngày khám:</span>

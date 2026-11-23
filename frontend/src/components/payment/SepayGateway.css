@@ -1,0 +1,116 @@
+.sgw {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px dashed var(--brand-600, #26a69a);
+  border-radius: 12px;
+  background: var(--brand-50, #f1faf8);
+}
+
+.sgw-btn {
+  width: 100%;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent, #f97316);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+}
+
+.sgw-btn:hover:not(:disabled) {
+  background: var(--accent-600, #ea580c);
+}
+
+.sgw-btn:disabled {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+.sgw-sub {
+  margin-top: 6px;
+  color: var(--ink-2, #334155);
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.sgw-test {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sgw-error {
+  margin-top: 8px;
+  color: #b91c1c;
+  font-size: 13px;
+  text-align: center;
+}
+
+.sgw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.sgw-modal {
+  width: min(420px, 100%);
+  padding: 26px 24px 22px;
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+  font-family: var(--font, 'Be Vietnam Pro', system-ui, sans-serif);
+}
+
+.sgw-icon {
+  display: grid;
+  place-items: center;
+  height: 56px;
+  font-size: 44px;
+}
+
+.sgw-modal h2 {
+  margin: 8px 0 6px;
+  color: var(--ink, #0f172a);
+  font-size: 20px;
+}
+
+.sgw-modal p {
+  margin: 0 0 16px;
+  color: var(--ink-2, #334155);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.sgw-modal .sgw-detail {
+  margin-top: -8px;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.sgw-spin {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--brand-100, #d9f5f0);
+  border-top-color: var(--brand, #108578);
+  border-radius: 50%;
+  animation: sgw-spin 0.8s linear infinite;
+}
+
+@keyframes sgw-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

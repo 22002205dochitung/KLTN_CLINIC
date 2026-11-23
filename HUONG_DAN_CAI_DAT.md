@@ -28,13 +28,29 @@
 8. Click **"Choose File"** và chọn: `database/kltn_clinic.sql`
 9. Scroll xuống và click **"Go"**
 10. Đợi import xong (thấy thông báo màu xanh)
+11. Lặp lại bước 7–10 lần lượt với 6 file sau, **đúng thứ tự**:
+    `database/payment_system.sql` → `database/payment_system_fix.sql` → `database/logic_fixes.sql` → `database/bank_transfer.sql` → `database/doctor_leaves.sql` → `database/reviews.sql` → `database/medicines.sql` → `database/queue_calling.sql` → `database/pharmacy_stock.sql` → `database/smart_recommendation.sql` → `database/doctor_shifts.sql` → `database/exam_type_payment_hold.sql` → `database/registration_otp.sql` → `database/doctor_profiles.sql`
 
 **Cách 2: Qua Command Line**
 ```bash
-# Mở Command Prompt tại thư mục dự án
+# Mở Command Prompt (cmd)
 cd C:\xampp\mysql\bin
 mysql -u root --port=3307 -e "CREATE DATABASE IF NOT EXISTS kltn_clinic CHARACTER SET utf8 COLLATE utf8_unicode_ci"
-mysql -u root --port=3307 kltn_clinic < "C:\xampp\htdocs\KLTN\database\kltn_clinic.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\kltn_clinic.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\payment_system.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\payment_system_fix.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\logic_fixes.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\bank_transfer.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\doctor_leaves.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\reviews.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\medicines.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\queue_calling.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\pharmacy_stock.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\smart_recommendation.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\doctor_shifts.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\exam_type_payment_hold.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\registration_otp.sql"
+mysql -u root --port=3307 --default-character-set=utf8mb4 kltn_clinic < "C:\xampp\htdocs\KLTN\database\doctor_profiles.sql"
 ```
 
 ---
@@ -103,10 +119,10 @@ npm start
 
 File `database/kltn_clinic.sql` bao gồm:
 
-✅ **12 Users:**
-- 3 bệnh nhân (patients)
-- 6 bác sĩ (doctors)
-- 2 lễ tân (receptionists)
+✅ **24 Users:**
+- 12 bệnh nhân (patients)
+- 10 bác sĩ (doctors)
+- 1 lễ tân (receptionist)
 - 1 admin
 
 ✅ **8 Departments (Chuyên khoa):**
@@ -119,9 +135,10 @@ File `database/kltn_clinic.sql` bao gồm:
 - Mắt
 - Tai - Mũi - Họng
 
-✅ **6 Doctors với thông tin chuyên khoa**
+✅ **10 Doctors với thông tin chuyên khoa**
 
-✅ **Tất cả bảng:** users, doctors, departments, appointments, medical_records, prescriptions, auth_audit_logs, user_sessions
+✅ **Các bảng:** users, doctors, departments, appointments, medical_records, prescriptions, auth_audit_logs, user_sessions
+(+ `consultation_fees`, `payment_transactions` từ `payment_system.sql`; `audit_logs` từ `logic_fixes.sql`)
 
 ---
 

@@ -1,250 +1,217 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../../config/api';
 import './DoctorQueue.css';
 
+const pad = (n) => String(n).padStart(2, '0');
+const hhmm = (v) => {
+  if (!v) return '';
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? '' : `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const authHeaders = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` } });
+
 /**
- * DoctorQueue Component - Displays patient queue for doctors
- * 
- * Features:
- * - View list of checked-in patients in order
- * - Display patient information and symptoms
- * - Show queue position and estimated wait time
- * - Real-time queue updates
- * 
- * Requirements Validation:
- * - Requirement 7.3: Doctors can view their checked-in patients in queue
- * - Requirement 3.2: Doctor can access doctor queue and assigned patient records
+ * DoctorQueue - the doctor's calling desk (hospital style).
+ *
+ *  📢 Gọi số tiếp theo  -> the lowest waiting number is shown full screen on the lobby TV and read out
+ *  🔁 Gọi lại           -> announce the same number again
+ *  🚫 Vắng mặt          -> the patient did not come; moved to "Lỡ lượt", can be called again later
+ *  🩺 Bắt đầu khám      -> opens the examination flow for the called patient
+ * Only one patient can be called into the room at a time; the next call is possible after
+ * the examination is completed or the patient is marked absent.
  */
-const DoctorQueue = () => {
-  const { user } = useAuth();
-  const [queue, setQueue] = useState([]);
-  const [doctorInfo, setDoctorInfo] = useState(null);
+const DoctorQueue = ({ onStartExam, onOpenBoard }) => {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
 
-  // Fetch doctor ID from user info
-  const fetchDoctorQueue = async () => {
+  const load = useCallback(async () => {
     try {
-      setLoading(true);
-      setError('');
-
-      const token = localStorage.getItem('auth_token');
-      
-      // First, get doctor_id from user
-      const doctorResponse = await axios.get(
-        `http://localhost:5000/api/users/doctor-info`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-
-      if (!doctorResponse.data.success || !doctorResponse.data.doctorId) {
-        throw new Error('Không tìm thấy thông tin bác sĩ');
-      }
-
-      const doctorId = doctorResponse.data.doctorId;
-
-      // Fetch queue using queue controller endpoint
-      const queueResponse = await axios.get(
-        `http://localhost:5000/api/queue/doctor/${doctorId}`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-
-      if (queueResponse.data.success) {
-        setQueue(queueResponse.data.queue || []);
-        setDoctorInfo(queueResponse.data.doctor);
-      }
+      const res = await axios.get(`${API_BASE}/queue/console`, authHeaders());
+      setData(res.data.data);
     } catch (err) {
-      console.error('Error fetching doctor queue:', err);
-      setError(err.response?.data?.error?.message || 'Không thể tải hàng đợi bệnh nhân. Vui lòng thử lại.');
+      setMsg({ type: 'error', text: err.response?.data?.error?.message || 'Không thể tải hàng đợi' });
     } finally {
       setLoading(false);
     }
-  };
-
-  // Refresh queue
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchDoctorQueue();
-    setRefreshing(false);
-  };
-
-  useEffect(() => {
-    if (user && user.role === 'doctor') {
-      fetchDoctorQueue();
-    }
-  }, [user]);
-
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      fetchDoctorQueue();
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(intervalId);
   }, []);
 
-  // Check role - Only Doctor and Admin can access
-  if (!user || (user.role !== 'doctor' && user.role !== 'admin')) {
-    return (
-      <div className="doctor-queue-container">
-        <div className="access-denied">
-          <h2>⛔ Không có quyền truy cập</h2>
-          <p>Chỉ bác sĩ mới có thể xem hàng đợi bệnh nhân.</p>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 5000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  const act = async (path, confirmText) => {
+    if (confirmText && !window.confirm(confirmText)) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await axios.post(`${API_BASE}/queue/${path}`, {}, authHeaders());
+      setMsg({ type: 'success', text: res.data.message });
+    } catch (err) {
+      setMsg({ type: 'error', text: err.response?.data?.error?.message || 'Thao tác thất bại' });
+    } finally {
+      setBusy(false);
+      load();
+    }
+  };
 
   if (loading) {
+    return <div className="dq"><div className="dq-loading">Đang tải hàng đợi…</div></div>;
+  }
+  if (!data) {
     return (
-      <div className="doctor-queue-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Đang tải hàng đợi bệnh nhân...</p>
-        </div>
+      <div className="dq">
+        {msg && <div className={`dq-msg is-${msg.type}`} role="alert">{msg.text}</div>}
+        <button type="button" className="dq-btn" onClick={load}>Thử lại</button>
       </div>
     );
   }
 
+  const { doctor, current, waiting, missed } = data;
+  const next = waiting[0];
+
   return (
-    <div className="doctor-queue-container">
-      {/* Header */}
-      <div className="queue-header">
-        <div className="header-content">
-          <h1>👥 Hàng đợi bệnh nhân</h1>
-          {doctorInfo && (
-            <div className="doctor-info">
-              <p className="doctor-name">{doctorInfo.degree} {doctorInfo.name}</p>
-              <p className="doctor-department">{doctorInfo.department}</p>
+    <div className="dq">
+      <header className="dq-head">
+        <div>
+          <h1>📢 Gọi số khám bệnh</h1>
+          <p>
+            <span className="dq-room">Phòng {doctor.room || '—'}</span>
+            {doctor.name}{doctor.department ? ` · ${doctor.department}` : ''}
+          </p>
+        </div>
+        <div className="dq-head-actions">
+          {onOpenBoard && <button type="button" className="dq-btn is-ghost" onClick={onOpenBoard}>🖥️ Màn hình sảnh</button>}
+          <button type="button" className="dq-btn is-ghost" onClick={load}>🔄 Làm mới</button>
+        </div>
+      </header>
+
+      <div className="dq-stats">
+        <div><b>{waiting.length}</b><span>Đang chờ</span></div>
+        <div className={missed.length ? 'is-warn' : ''}><b>{missed.length}</b><span>Lỡ lượt</span></div>
+        <div><b>{data.done_count}</b><span>Đã khám</span></div>
+        <div><b>{data.total}</b><span>Đã cấp số</span></div>
+      </div>
+
+      {msg && <div className={`dq-msg is-${msg.type}`} role="status">{msg.text}</div>}
+
+      <section className={`dq-current ${current ? 'is-calling' : ''}`} aria-live="polite">
+        {current ? (
+          <>
+            <div className="dq-current-label">ĐANG MỜI VÀO PHÒNG {doctor.room}</div>
+            <div className="dq-current-main">
+              <div className="dq-current-number">{pad(current.number)}</div>
+              <div className="dq-current-info">
+                <div className="dq-current-name">{current.patient_name}</div>
+                <div className="dq-muted">
+                  {current.patient_phone || 'Không có SĐT'} · Khung giờ {current.time_slot} · Check-in {hhmm(current.checked_in_at)}
+                </div>
+                {current.symptoms && <div className="dq-symptoms">Triệu chứng: {current.symptoms}</div>}
+                <div className="dq-muted">Đã gọi {current.call_count} lần · lần cuối {hhmm(current.called_at)}</div>
+              </div>
             </div>
-          )}
-        </div>
-        <div className="header-actions">
-          <button 
-            className={`btn-refresh ${refreshing ? 'refreshing' : ''}`}
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            🔄 {refreshing ? 'Đang cập nhật...' : 'Làm mới'}
-          </button>
-        </div>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="alert alert-error">
-          <span>⚠️</span>
-          <span>{error}</span>
-          <button onClick={fetchDoctorQueue} className="btn-retry">
-            Thử lại
-          </button>
-        </div>
-      )}
-
-      {/* Queue Stats */}
-      <div className="queue-stats">
-        <div className="stat-card">
-          <div className="stat-icon">👥</div>
-          <div className="stat-content">
-            <div className="stat-value">{queue.length}</div>
-            <div className="stat-label">Bệnh nhân đang chờ</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">⏱️</div>
-          <div className="stat-content">
-            <div className="stat-value">{queue.length * 15} phút</div>
-            <div className="stat-label">Thời gian chờ ước tính</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">📅</div>
-          <div className="stat-content">
-            <div className="stat-value">{new Date().toLocaleDateString('vi-VN')}</div>
-            <div className="stat-label">Ngày hôm nay</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Queue List */}
-      {queue.length === 0 ? (
-        <div className="empty-queue">
-          <div className="empty-icon">✓</div>
-          <h3>Không có bệnh nhân trong hàng đợi</h3>
-          <p>Hiện tại không có bệnh nhân nào đã check-in và đang chờ khám.</p>
-        </div>
-      ) : (
-        <div className="queue-list">
-          <div className="list-header">
-            <h2>Danh sách bệnh nhân đang chờ</h2>
-            <p className="list-subtitle">Danh sách được sắp xếp theo thứ tự check-in</p>
-          </div>
-          
-          {queue.map((patient, index) => (
-            <div 
-              key={patient.appointment_id} 
-              className={`queue-item ${index === 0 ? 'next-patient' : ''}`}
+            <div className="dq-actions">
+              <button type="button" className="dq-btn is-primary is-big" disabled={busy} onClick={() => onStartExam && onStartExam(current)}>
+                🩺 Bắt đầu khám
+              </button>
+              <button type="button" className="dq-btn is-big" disabled={busy} onClick={() => act('recall')}>
+                🔁 Gọi lại
+              </button>
+              <button
+                type="button"
+                className="dq-btn is-danger is-big"
+                disabled={busy}
+                onClick={() => act('skip', `Số ${pad(current.number)} – ${current.patient_name} không có mặt?\nBệnh nhân sẽ chuyển sang danh sách "Lỡ lượt" và có thể gọi lại sau.`)}
+              >
+                🚫 Vắng mặt
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="dq-empty-room">
+            <div className="dq-current-label">PHÒNG {doctor.room} ĐANG TRỐNG</div>
+            <button
+              type="button"
+              className="dq-btn is-primary is-call"
+              disabled={busy || !next}
+              onClick={() => act('call-next')}
             >
-              <div className="queue-position">
-                <div className="position-badge">
-                  {index === 0 ? '👉' : patient.queue_position}
-                </div>
-                {index === 0 && <span className="next-label">Tiếp theo</span>}
-              </div>
-
-              <div className="patient-info">
-                <div className="patient-header">
-                  <h3 className="patient-name">{patient.patient_name}</h3>
-                  <span className="appointment-time">{patient.time_slot}</span>
-                </div>
-                
-                <div className="patient-details">
-                  <div className="detail-row">
-                    <span className="detail-icon">📱</span>
-                    <span className="detail-text">{patient.patient_phone}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-icon">📧</span>
-                    <span className="detail-text">{patient.patient_email}</span>
-                  </div>
-                  {patient.symptoms && (
-                    <div className="detail-row symptoms">
-                      <span className="detail-icon">📋</span>
-                      <span className="detail-text">
-                        <strong>Triệu chứng:</strong> {patient.symptoms}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="patient-meta">
-                  <span className="checkin-time">
-                    ✓ Check-in: {new Date(patient.checked_in_time).toLocaleTimeString('vi-VN')}
-                  </span>
-                  <span className="wait-time">
-                    ⏱️ Chờ khoảng: {(index * 15)} phút
-                  </span>
-                </div>
-              </div>
-
-              <div className="queue-actions">
-                <button 
-                  className="btn-view-record"
-                  onClick={() => window.location.href = `/save-medical-record?appointmentId=${patient.appointment_id}`}
-                >
-                  📝 Khám bệnh
-                </button>
-              </div>
+              📢 Gọi số tiếp theo{next ? ` · ${pad(next.number)}` : ''}
+            </button>
+            <div className="dq-muted">
+              {next
+                ? `${next.patient_name} · khung giờ ${next.time_slot}. Màn hình sảnh sẽ hiện số và đọc loa mời vào phòng.`
+                : missed.length
+                  ? 'Không còn ai chờ. Nếu bệnh nhân lỡ lượt đã quay lại, bấm "Gọi vào khám" bên dưới.'
+                  : 'Chưa có bệnh nhân nào check-in chờ khám.'}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        )}
+      </section>
 
-      {/* Auto-refresh notice */}
-      <div className="auto-refresh-notice">
-        <span>🔄 Tự động cập nhật mỗi 30 giây</span>
+      <div className="dq-lists">
+        <section className="dq-list">
+          <h2>Đang chờ ({waiting.length})</h2>
+          {waiting.length === 0 ? (
+            <p className="dq-muted">Không có bệnh nhân chờ.</p>
+          ) : (
+            <ol>
+              {waiting.map((p, i) => (
+                <li key={p.appointment_id} className={i === 0 ? 'is-next' : ''}>
+                  <span className="dq-num">{pad(p.number)}</span>
+                  <span className="dq-who">
+                    <b>{p.patient_name}</b>
+                    <small>{p.time_slot} · check-in {hhmm(p.checked_in_at)}{p.symptoms ? ` · ${p.symptoms}` : ''}</small>
+                  </span>
+                  <button
+                    type="button"
+                    className="dq-btn is-small"
+                    disabled={busy || !!current}
+                    title={current ? 'Đang có bệnh nhân trong phòng' : 'Gọi trước (ưu tiên: người già, trẻ nhỏ, cấp cứu…)'}
+                    onClick={() => act(`call/${p.appointment_id}`, i === 0 ? null : `Gọi ưu tiên số ${pad(p.number)} – ${p.patient_name} trước những người đang chờ?`)}
+                  >
+                    {i === 0 ? 'Gọi' : 'Gọi ưu tiên'}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+
+        <section className="dq-list is-missed">
+          <h2>Lỡ lượt ({missed.length})</h2>
+          {missed.length === 0 ? (
+            <p className="dq-muted">Không có ai lỡ lượt.</p>
+          ) : (
+            <ol>
+              {missed.map((p) => (
+                <li key={p.appointment_id}>
+                  <span className="dq-num">{pad(p.number)}</span>
+                  <span className="dq-who">
+                    <b>{p.patient_name}</b>
+                    <small>Đã gọi {p.call_count} lần · lần cuối {hhmm(p.called_at)}</small>
+                  </span>
+                  <button
+                    type="button"
+                    className="dq-btn is-small"
+                    disabled={busy || !!current}
+                    title={current ? 'Đang có bệnh nhân trong phòng' : 'Bệnh nhân đã quay lại'}
+                    onClick={() => act(`call/${p.appointment_id}`)}
+                  >
+                    Gọi vào khám
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
       </div>
+
+      <p className="dq-foot">Tự động cập nhật mỗi 5 giây · Chỉ mời một bệnh nhân vào phòng mỗi lần – khám xong (hoàn tất) hoặc bấm “Vắng mặt” để gọi số tiếp theo.</p>
     </div>
   );
 };

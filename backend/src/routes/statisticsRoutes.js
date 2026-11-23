@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const statisticsController = require('../controllers/statisticsController');
-const { requireRole } = require('../middleware/authMiddleware');
+const { verifyToken, requireRole } = require('../middleware/authMiddleware');
+
+// requireRole needs req.user, so the token must be verified first (was missing -> always 401)
+router.use(verifyToken);
 
 /**
  * Statistics Routes

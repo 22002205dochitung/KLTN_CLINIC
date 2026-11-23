@@ -1,0 +1,761 @@
+/* Simple Booking Form - Two Column Layout */
+
+.simple-booking-form {
+  background: white;
+  padding: 0;
+  border-radius: 16px;
+  max-width: 1400px;
+  margin: 2rem auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.simple-booking-form.modal-style {
+  background: white;
+  padding: 0;
+  max-width: 100%;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 0;
+}
+
+/* Two Column Container */
+.booking-container {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 550px;
+}
+
+/* Left Panel - Instructions */
+.instructions-panel {
+  background: linear-gradient(180deg, #108578 0%, #26a69a 100%);
+  padding: 2rem 1.5rem;
+  color: white;
+}
+
+.instructions-panel h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
+  color: white;
+}
+
+.instruction-item {
+  margin-bottom: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.instruction-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.instruction-item p {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  opacity: 0.95;
+  margin: 0;
+}
+
+/* Right Panel - Form */
+.form-panel {
+  padding: 2rem 2.5rem;
+  background: white;
+}
+
+/* Close Button for Modal */
+.btn-close-modal {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: white;
+  border: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #108578;
+  font-weight: bold;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-close-modal:hover {
+  background: #f0f0f0;
+  transform: rotate(90deg);
+}
+
+/* Form Header */
+.form-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #108578;
+}
+
+.form-header h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #108578;
+}
+
+.form-header p {
+  font-size: 0.9rem;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+/* Alert */
+.alert-error {
+  background: rgba(255, 107, 107, 0.95);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.alert-icon {
+  font-size: 1.1rem;
+}
+
+/* Form Layout */
+.simple-booking-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Form Labels */
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.form-label .required {
+  color: #e53e3e;
+  margin-left: 2px;
+}
+
+/* Input Styles */
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  color: #2d3748;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+/* Payment method cards (radio is visually hidden, the whole card is the target) */
+.payment-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.form-group label.payment-option {
+  margin: 0;
+  font-weight: 400;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.form-group label.payment-option:hover {
+  border-color: #b9ece5;
+}
+
+.form-group label.payment-option.is-selected {
+  border-color: #108578;
+  background: #f1faf8;
+  box-shadow: 0 6px 18px rgba(16, 133, 120, 0.15);
+}
+
+.form-group input.payment-option-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.payment-option:has(.payment-option-input:focus-visible) {
+  outline: 2px solid #108578;
+  outline-offset: 2px;
+}
+
+.payment-option-icon {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #f1f5f9;
+  font-size: 22px;
+}
+
+.payment-option.is-selected .payment-option-icon {
+  background: #d9f5f0;
+}
+
+.payment-option-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.payment-option-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.payment-option-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.payment-option-desc {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.payment-option-check {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.payment-option.is-selected .payment-option-check {
+  border-color: #108578;
+  background: #108578;
+}
+
+.form-group input::placeholder,
+.form-group select,
+.form-group textarea::placeholder {
+  color: #a0aec0;
+  font-weight: 400;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  background: white;
+  border-color: #108578;
+  box-shadow: 0 0 0 3px rgba(16, 133, 120, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Captcha Section */
+.captcha-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.captcha-box {
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  border: 2px solid #e2e8f0;
+}
+
+.captcha-code {
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #2d3748;
+  font-family: 'Courier New', monospace;
+  text-decoration: line-through;
+  text-decoration-color: rgba(0, 0, 0, 0.3);
+  user-select: none;
+}
+
+.btn-refresh-captcha {
+  background: rgba(16, 133, 120, 0.1);
+  color: #108578;
+  border: 2px solid rgba(16, 133, 120, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+}
+
+.btn-refresh-captcha:hover {
+  background: rgba(16, 133, 120, 0.2);
+  border-color: #108578;
+}
+
+.captcha-input {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Submit Button */
+.btn-submit {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+}
+
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(72, 187, 120, 0.5);
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Success Message */
+.success-message {
+  text-align: center;
+  color: white;
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, #108578 0%, #26a69a 100%);
+  border-radius: 16px;
+  margin: 2rem;
+}
+
+.success-icon {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 2rem;
+  background: #48bb78;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  animation: scaleIn 0.5s ease-out;
+}
+
+.success-message h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 800;
+}
+
+.success-message p {
+  font-size: 1.1rem;
+  opacity: 0.95;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+/* Appointment Details */
+.appointment-details {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  text-align: left;
+  color: #2d3748;
+}
+
+.appointment-details h3 {
+  text-align: center;
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+  color: #108578;
+  font-weight: 800;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.detail-value {
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.status-pending {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+/* QR Code Section */
+.qr-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 1rem 0 2rem;
+  text-align: center;
+  color: #2d3748;
+}
+
+.qr-section h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  color: #108578;
+  font-weight: 800;
+}
+
+.qr-instruction {
+  color: #4a5568;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.qr-section canvas,
+.qr-section img {
+  margin: 0 auto;
+  border: 4px solid white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-close-success {
+  padding: 1rem 3rem;
+  background: white;
+  color: #108578;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 1rem;
+}
+
+.btn-close-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Animations */
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Responsive */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .booking-container {
+    grid-template-columns: 1fr;
+  }
+
+  .instructions-panel {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .simple-booking-form {
+    padding: 0;
+    margin: 1rem;
+  }
+
+  .simple-booking-form.modal-style {
+    padding: 0;
+    width: 95vw;
+  }
+
+  .form-panel {
+    padding: 2rem 1.5rem;
+  }
+
+  .form-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .form-header p {
+    font-size: 0.95rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .captcha-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .captcha-box {
+    text-align: center;
+  }
+
+  .btn-refresh-captcha {
+    width: 100%;
+  }
+
+  .btn-close-modal {
+    top: 15px;
+    right: 15px;
+    width: 35px;
+    height: 35px;
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-panel {
+    padding: 1.5rem 1rem;
+  }
+
+  .form-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .form-header p {
+    font-size: 0.9rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
+
+  .btn-submit {
+    padding: 1.25rem;
+    font-size: 1.1rem;
+  }
+
+  .success-icon {
+    width: 80px;
+    height: 80px;
+    font-size: 2.5rem;
+  }
+
+  .success-message h2 {
+    font-size: 1.5rem;
+  }
+
+  .success-message p {
+    font-size: 1rem;
+  }
+}
+
+/* Success screen text sits on the dark blue card: keep it white and readable */
+.success-message h2 {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  background: none;
+}
+
+.success-message > p {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* Follow-up booking opened from the dashboard */
+.booking-prefill-note {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #b9ece5;
+  border-radius: 10px;
+  background: #f1faf8;
+  color: #0e6e65;
+  font-size: 14px;
+}
+
+/* Remaining places under a time slot (each slot takes several patients) */
+.slot-remaining {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #108578;
+}
+
+/* Exam type: khám BHYT */
+.insurance-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.insurance-fields .insurance-note {
+  grid-column: 1 / -1;
+}
+
+.insurance-note {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 14px;
+}
+
+.insurance-note.is-error {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+/* payment hold countdown (online transfer) */
+.hold-countdown {
+  margin: 10px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 14px;
+}
+
+.hold-countdown b {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hold-countdown.is-over {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+@media (max-width: 600px) {
+  .insurance-fields {
+    grid-template-columns: 1fr;
+  }
+}

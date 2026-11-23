@@ -41,11 +41,15 @@ const securityMiddleware = helmet({
       objectSrc: ["'none'"], // Disable plugins
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"], // Prevent embedding in frames
+      // payment forms are posted to the SePay gateway checkout page
+      formAction: ["'self'", "https://pay.sepay.vn", "https://pay-sandbox.sepay.vn"],
+      // HTTPS_ONLY=false while the site is still tested over http://<IP> (before the SSL certificate)
+      upgradeInsecureRequests: process.env.HTTPS_ONLY === 'false' ? null : []
     }
   },
 
-  // Strict Transport Security - forces HTTPS
-  hsts: {
+  // Strict Transport Security - forces HTTPS (not while HTTPS_ONLY=false)
+  hsts: process.env.HTTPS_ONLY === 'false' ? false : {
     maxAge: 31536000, // 1 year in seconds
     includeSubDomains: true,
     preload: true
@@ -106,7 +110,9 @@ const developmentSecurityMiddleware = helmet({
       fontSrc: ["'self'", "https:", "data:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"]
+      frameSrc: ["'none'"],
+      // payment forms are posted to the SePay gateway checkout page
+      formAction: ["'self'", "https://pay.sepay.vn", "https://pay-sandbox.sepay.vn"]
     }
   },
   hsts: false, // Disable HSTS in development

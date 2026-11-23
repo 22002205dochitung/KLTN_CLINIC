@@ -22,6 +22,11 @@ class AuditLogService {
      * @returns {Promise<Object>} Result of the log operation
      */
     async logEvent(logData) {
+        // Business events ({ eventType, eventDetails }) go to the general audit_logs table;
+        // authentication events ({ action, success }) go to auth_audit_logs.
+        if (logData && logData.eventType) {
+            return this.logActivity(logData);
+        }
         try {
             const {
                 userId = null,
@@ -65,6 +70,34 @@ class AuditLogService {
                 success: false,
                 error: error.message
             };
+        }
+    }
+
+    /**
+     * Log a business activity (appointment, check-in, payment...) to audit_logs
+     * @param {Object} data
+     * @param {Number|null} data.userId - Acting user
+     * @param {String} data.eventType - e.g. 'appointment_created', 'appointment_checkin'
+     * @param {String|Object} data.eventDetails - JSON string or object
+     * @param {String} data.ipAddress
+     * @param {String} data.userAgent
+     */
+    async logActivity({ userId = null, eventType, eventDetails = null, ipAddress = null, userAgent = null }) {
+        try {
+            if (!eventType) throw new Error('eventType is required');
+            const details = eventDetails === null || typeof eventDetails === 'string'
+                ? eventDetails
+                : JSON.stringify(eventDetails);
+            const result = await executeQuery(
+                `INSERT INTO audit_logs (user_id, event_type, event_details, ip_address, user_agent, timestamp)
+                 VALUES (?, ?, ?, ?, ?, NOW())`,
+                [userId, String(eventType).slice(0, 50), details, ipAddress, userAgent]
+            );
+            return { success: true, logId: result.insertId };
+        } catch (error) {
+            // Audit logging must never break the main flow
+            console.error('Activity log error:', error.message);
+            return { success: false, error: error.message };
         }
     }
 
@@ -279,6 +312,7 @@ class AuditLogService {
      * @param {Date|null} filters.endDate - Filter by end date
      * @param {Number} filters.page - Page number (default: 1)
      * @param {Number} filters.limit - Items per page (default: 50)
+     * @param {Array} filters.eventTypes - Array of event types to filter (for audit_logs table)
      * @returns {Promise<Object>} Paginated audit logs
      */
     async getAuditLogs(filters = {}) {
@@ -286,11 +320,17 @@ class AuditLogService {
             const {
                 userId = null,
                 action = null,
+                eventTypes = null, // NEW: for filtering audit_logs by event_type
                 startDate = null,
                 endDate = null,
                 page = 1,
                 limit = 50
             } = filters;
+
+            // Determine which table to query based on filters
+            const useGeneralAuditLogs = eventTypes && eventTypes.length > 0;
+            const tableName = useGeneralAuditLogs ? 'audit_logs' : 'auth_audit_logs';
+            const primaryKey = useGeneralAuditLogs ? 'log_id' : 'log_id';
 
             // Build WHERE clause dynamically
             const conditions = [];
@@ -301,9 +341,15 @@ class AuditLogService {
                 params.push(userId);
             }
 
-            if (action) {
+            if (action && !useGeneralAuditLogs) {
                 conditions.push('action = ?');
                 params.push(action);
+            }
+
+            if (eventTypes && eventTypes.length > 0) {
+                const placeholders = eventTypes.map(() => '?').join(',');
+                conditions.push(`event_type IN (${placeholders})`);
+                params.push(...eventTypes);
             }
 
             if (startDate) {
@@ -323,7 +369,7 @@ class AuditLogService {
             // Get total count
             const countQuery = `
                 SELECT COUNT(*) as total
-                FROM auth_audit_logs
+                FROM ${tableName}
                 ${whereClause}
             `;
             const [countResult] = await executeQuery(countQuery, params);
@@ -331,21 +377,42 @@ class AuditLogService {
 
             // Get paginated results
             const offset = (page - 1) * limit;
-            const dataQuery = `
-                SELECT 
-                    log_id,
-                    user_id,
-                    action,
-                    ip_address,
-                    user_agent,
-                    success,
-                    failure_reason,
-                    timestamp
-                FROM auth_audit_logs
-                ${whereClause}
-                ORDER BY timestamp DESC
-                LIMIT ? OFFSET ?
-            `;
+            
+            let dataQuery;
+            if (useGeneralAuditLogs) {
+                // Query for general audit_logs (includes appointment events)
+                dataQuery = `
+                    SELECT 
+                        log_id,
+                        user_id,
+                        event_type,
+                        event_details,
+                        ip_address,
+                        user_agent,
+                        timestamp
+                    FROM ${tableName}
+                    ${whereClause}
+                    ORDER BY timestamp DESC
+                    LIMIT ? OFFSET ?
+                `;
+            } else {
+                // Query for auth_audit_logs (authentication events)
+                dataQuery = `
+                    SELECT 
+                        log_id,
+                        user_id,
+                        action,
+                        ip_address,
+                        user_agent,
+                        success,
+                        failure_reason,
+                        timestamp
+                    FROM ${tableName}
+                    ${whereClause}
+                    ORDER BY timestamp DESC
+                    LIMIT ? OFFSET ?
+                `;
+            }
             
             const dataParams = [...params, limit, offset];
             const logs = await executeQuery(dataQuery, dataParams);

@@ -1,0 +1,125 @@
+.rv {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  background: #fffbeb;
+  text-align: left;
+}
+
+.rv-title {
+  font-weight: 700;
+  color: #78350f;
+  margin-bottom: 6px;
+}
+
+.rv-pick {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.rv-star {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: none;
+  font-size: 28px;
+  line-height: 1;
+  color: #d6d3d1;
+  cursor: pointer;
+  transition: transform 0.1s ease, color 0.1s ease;
+}
+
+.rv-star.is-on {
+  color: #f59e0b;
+}
+
+.rv-star:hover {
+  transform: scale(1.12);
+}
+
+.rv-star:focus-visible,
+.rv-btn:focus-visible,
+.rv-link:focus-visible {
+  outline: 2px solid #b45309;
+  outline-offset: 2px;
+}
+
+.rv-label {
+  margin-left: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.rv-comment {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  font: inherit;
+  resize: vertical;
+}
+
+.rv-error {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+.rv-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.rv-btn {
+  padding: 6px 14px;
+  border: 1px solid #d6d3d1;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.rv-btn.is-primary {
+  border-color: #b45309;
+  background: #b45309;
+  color: #fff;
+  font-weight: 700;
+}
+
+.rv-saved {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+}
+
+.rv-stars {
+  font-size: 18px;
+  color: #f59e0b;
+  letter-spacing: 1px;
+}
+
+.rv-off {
+  color: #d6d3d1;
+}
+
+.rv-text {
+  flex: 1;
+  font-size: 13px;
+  color: #57534e;
+}
+
+.rv-link {
+  border: none;
+  background: none;
+  color: #b45309;
+  font-weight: 700;
+  cursor: pointer;
+}

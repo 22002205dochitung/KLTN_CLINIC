@@ -1,0 +1,157 @@
+.ptpl {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--brand-100, #d9f5f0);
+  border-radius: 12px;
+  background: var(--brand-50, #f1faf8);
+}
+
+.ptpl-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.ptpl-title {
+  font-weight: 700;
+  color: var(--brand, #108578);
+  white-space: nowrap;
+}
+
+.ptpl-pick {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.ptpl-btn {
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink, #0f172a);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ptpl-btn:hover:not(:disabled) {
+  border-color: var(--brand, #108578);
+  color: var(--brand, #108578);
+}
+
+.ptpl-btn.is-save {
+  border-color: var(--brand, #108578);
+  background: var(--brand, #108578);
+  color: #fff;
+}
+
+.ptpl-btn.is-save:hover:not(:disabled) {
+  background: #0e6e65;
+  color: #fff;
+}
+
+.ptpl-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ptpl-msg {
+  margin-top: 8px;
+  font-size: 13.5px;
+}
+
+.ptpl-msg.is-ok {
+  color: #0e6e65;
+}
+
+.ptpl-msg.is-error {
+  color: #b91c1c;
+}
+
+.ptpl-save {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--brand-100, #d9f5f0);
+}
+
+.ptpl-save label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.ptpl-save input {
+  flex: 1 1 240px;
+  min-width: 0;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.ptpl-save input:focus {
+  outline: 2px solid var(--brand-600, #26a69a);
+  outline-offset: 1px;
+}
+
+.ptpl-save-count {
+  color: #475569;
+  font-size: 13px;
+}
+
+.ptpl-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.ptpl-list li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+}
+
+.ptpl-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.ptpl-muted {
+  color: #64748b;
+  font-size: 12.5px;
+  flex: 1;
+}
+
+.ptpl-item-meds {
+  margin-top: 4px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.ptpl-link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--brand, #108578);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ptpl-link.is-danger {
+  color: #b91c1c;
+}

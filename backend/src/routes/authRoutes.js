@@ -110,6 +110,10 @@ router.post('/login',
     authController.login
 );
 
+// Registration OTP: confirm e-mail / request a new code (wrong codes are limited per code)
+router.post('/verify-otp', authRateLimit, authController.verifyOtp);
+router.post('/resend-otp', authRateLimit, authController.resendOtp);
+
 /**
  * POST /api/auth/forgot-password
  * Password recovery initiation endpoint

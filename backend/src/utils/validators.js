@@ -270,14 +270,16 @@ class Validators {
                 };
             }
 
-            // Format the phone number for storage (normalize to 84 format)
+            // Normalize for storage to the domestic format 0xxxxxxxxx.
+            // Booking, seed data and the frontend all use this format; storing '84...' made the
+            // same person end up with two accounts and phone lookups miss.
             let formatted;
             if (cleanPhone.startsWith('84')) {
-                formatted = cleanPhone;
+                formatted = '0' + cleanPhone.substring(2);
             } else if (cleanPhone.startsWith('0')) {
-                formatted = '84' + cleanPhone.substring(1);
+                formatted = cleanPhone;
             } else {
-                formatted = '84' + cleanPhone;
+                formatted = '0' + cleanPhone;
             }
 
             return {

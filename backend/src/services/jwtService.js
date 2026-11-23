@@ -16,9 +16,10 @@ class JWTService {
     /**
      * Generate JWT token with user payload and 24h expiration
      * @param {Object} payload - User data { userId, email, role, fullName }
+     * @param {String} expiresInOverride - Optional expiration time override
      * @returns {String} - JWT token
      */
-    generateToken(payload) {
+    generateToken(payload, expiresInOverride) {
         try {
             const jti = this.generateTokenId(payload.userId);
             
@@ -30,11 +31,13 @@ class JWTService {
                 jti: jti // JWT ID for token blacklisting support
             };
 
+            const expiresIn = expiresInOverride || payload.expiresIn || this.expiresIn;
+
             const token = jwt.sign(
                 tokenPayload,
                 this.secret,
                 {
-                    expiresIn: this.expiresIn,
+                    expiresIn,
                     issuer: this.issuer,
                     audience: this.audience,
                     algorithm: 'HS256'

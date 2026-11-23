@@ -1,531 +1,531 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
+import { useAuth } from '../../contexts/AuthContext';
 import './AdminAppointments.css';
+import AppointmentEditModal from './AppointmentEditModal';
+
+import { API_BASE } from '../../config/api';
 
 /**
- * AdminAppointments Component - System-wide appointment management for administrators
+ * AdminAppointments Component - Full appointment management for admin
  * 
  * Features:
- * - View all appointments across all doctors and departments
- * - Filter by status, date, doctor, department
- * - Search appointments by patient name or ID
+ * - View all appointments in a table
+ * - Filter by status, date, doctor
+ * - Search functionality
+ * - View appointment details
  * - Update appointment status
- * - Cancel appointments
- * - Export appointment data
- * 
- * Requirements Validation:
- * - Requirement 7.3: Admins can manage all appointments system-wide
- * - Requirement 7.4: System-wide appointment visibility for admins
- * - Requirement 3.4: Admin role has access to all system functions
  */
-const AdminAppointments = () => {
+const AdminAppointments = ({ onNavigate, initialFilters }) => {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const [activeTab, setActiveTab] = useState('appointments'); // 'appointments' or 'audit-logs'
   const [appointments, setAppointments] = useState([]);
-  const [filteredAppointments, setFilteredAppointments] = useState([]);
-  const [doctors, setDoctors] = useState([]);
-  const [departments, setDepartments] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Dashboard counters can open this page pre-filtered (e.g. today, status=booked)
   const [filters, setFilters] = useState({
-    status: 'all',
-    dateFrom: '',
-    dateTo: '',
-    doctorId: 'all',
-    departmentId: 'all',
-    searchQuery: ''
+    status: '',
+    date: '',
+    doctorId: '',
+    ...(initialFilters || {})
   });
-  const [stats, setStats] = useState({
-    total: 0,
-    booked: 0,
-    checkedIn: 0,
-    completed: 0,
-    cancelled: 0
-  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [editing, setEditing] = useState(null);
+  const [notice, setNotice] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
-  // Fetch all appointments (admin view)
-  const fetchAllAppointments = async () => {
+  const handleDelete = async (apt) => {
+    const ok = window.confirm(
+      `Xoá vĩnh viễn lịch hẹn ${apt.booking_code || `#${apt.id}`} của ${apt.patient_name} (${apt.time_slot}, ${formatDate(apt.appointment_date)})?
+
+` +
+      'Chỉ xoá được lịch chưa check-in và chưa thanh toán. Thao tác này không thể hoàn tác.'
+    );
+    if (!ok) return;
+    setDeletingId(apt.id);
+    setNotice(null);
+    try {
+      const res = await axios.delete(`${API_BASE}/admin/appointments/${apt.id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
+      });
+      setNotice({ type: 'success', text: res.data.message });
+      setAppointments((list) => list.filter((a) => a.id !== apt.id));
+    } catch (err) {
+      setNotice({ type: 'error', text: err.response?.data?.error?.message || 'Không thể xoá lịch hẹn' });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'appointments') {
+      loadAppointments();
+    } else if (activeTab === 'audit-logs') {
+      loadAuditLogs();
+    }
+  }, [filters, activeTab]);
+
+  const loadAppointments = async () => {
     try {
       setLoading(true);
       setError('');
 
       const token = localStorage.getItem('auth_token');
+      const params = new URLSearchParams();
       
-      // Fetch appointments
-      const appointmentsResponse = await axios.get(
-        'http://localhost:5000/api/appointments/all',
-        { headers: { 'Authorization': `Bearer ${token}` } }
+      if (filters.status) params.append('status', filters.status);
+      if (filters.date) params.append('date', filters.date);
+      if (filters.doctorId) params.append('doctorId', filters.doctorId);
+
+      const response = await axios.get(
+        `${API_BASE}/admin/appointments?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
       );
 
-      if (appointmentsResponse.data.success) {
-        setAppointments(appointmentsResponse.data.appointments || []);
-        calculateStats(appointmentsResponse.data.appointments || []);
-      }
-
-      // Fetch doctors and departments for filters
-      const doctorsResponse = await axios.get('http://localhost:5000/api/appointments/doctors');
-      if (doctorsResponse.data.success) {
-        setDoctors(doctorsResponse.data.doctors || []);
-        
-        // Extract unique departments from doctors
-        const uniqueDepartments = [...new Map(
-          doctorsResponse.data.doctors.map(d => [d.department_id, {
-            id: d.department_id,
-            name: d.department_name
-          }])
-        ).values()];
-        setDepartments(uniqueDepartments);
+      if (response.data.success) {
+        setAppointments(response.data.appointments || []);
       }
     } catch (err) {
-      console.error('Error fetching appointments:', err);
-      setError(err.response?.data?.error?.message || 'Không thể tải danh sách lịch hẹn. Vui lòng thử lại.');
+      console.error('Error loading appointments:', err);
+      setError('Không thể tải danh sách lịch hẹn');
     } finally {
       setLoading(false);
     }
   };
 
-  // Calculate statistics from appointments
-  const calculateStats = (appointmentsList) => {
-    const newStats = {
-      total: appointmentsList.length,
-      booked: appointmentsList.filter(a => a.status === 'booked').length,
-      checkedIn: appointmentsList.filter(a => a.status === 'checked_in').length,
-      completed: appointmentsList.filter(a => a.status === 'completed').length,
-      cancelled: appointmentsList.filter(a => a.status === 'cancelled').length
-    };
-    setStats(newStats);
-  };
-
-  // Apply filters to appointments
-  useEffect(() => {
-    let filtered = [...appointments];
-
-    // Filter by status
-    if (filters.status !== 'all') {
-      filtered = filtered.filter(apt => apt.status === filters.status);
-    }
-
-    // Filter by date range
-    if (filters.dateFrom) {
-      filtered = filtered.filter(apt => 
-        new Date(apt.appointment_date) >= new Date(filters.dateFrom)
-      );
-    }
-    if (filters.dateTo) {
-      filtered = filtered.filter(apt => 
-        new Date(apt.appointment_date) <= new Date(filters.dateTo)
-      );
-    }
-
-    // Filter by doctor
-    if (filters.doctorId !== 'all') {
-      filtered = filtered.filter(apt => apt.doctor_id === parseInt(filters.doctorId));
-    }
-
-    // Filter by department
-    if (filters.departmentId !== 'all') {
-      filtered = filtered.filter(apt => apt.department_id === parseInt(filters.departmentId));
-    }
-
-    // Search by patient name or ID
-    if (filters.searchQuery.trim()) {
-      const query = filters.searchQuery.toLowerCase();
-      filtered = filtered.filter(apt => 
-        apt.patient_name?.toLowerCase().includes(query) ||
-        apt.patient_email?.toLowerCase().includes(query) ||
-        apt.patient_phone?.includes(query) ||
-        apt.appointment_id?.toString().includes(query)
-      );
-    }
-
-    setFilteredAppointments(filtered);
-  }, [appointments, filters]);
-
-  // Handle filter change
-  const handleFilterChange = (filterName, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterName]: value
-    }));
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setFilters({
-      status: 'all',
-      dateFrom: '',
-      dateTo: '',
-      doctorId: 'all',
-      departmentId: 'all',
-      searchQuery: ''
-    });
-  };
-
-  // Update appointment status
-  const updateAppointmentStatus = async (appointmentId, newStatus) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn thay đổi trạng thái thành "${getStatusLabel(newStatus)}"?`)) {
-      return;
-    }
-
+  const loadAuditLogs = async () => {
     try {
+      setLoading(true);
+      setError('');
+
       const token = localStorage.getItem('auth_token');
-      const response = await axios.put(
-        `http://localhost:5000/api/appointments/${appointmentId}/status`,
-        { status: newStatus },
-        { headers: { 'Authorization': `Bearer ${token}` } }
+      const params = new URLSearchParams();
+      
+      // Filter for appointment-related events only
+      params.append('eventTypes', 'appointment_created,public_appointment_created,appointment_cancelled,appointment_rescheduled,appointment_checkin');
+      
+      if (filters.date) params.append('date', filters.date);
+
+      const response = await axios.get(
+        `${API_BASE}/admin/audit-logs?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
       );
 
       if (response.data.success) {
-        // Refresh appointments list
-        await fetchAllAppointments();
-        alert('Cập nhật trạng thái thành công!');
+        setAuditLogs(response.data.data || []);
       }
     } catch (err) {
-      console.error('Error updating appointment status:', err);
-      alert(err.response?.data?.error?.message || 'Không thể cập nhật trạng thái. Vui lòng thử lại.');
+      console.error('Error loading audit logs:', err);
+      setError('Không thể tải nhật ký hoạt động');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Cancel appointment
-  const cancelAppointment = async (appointmentId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn hủy lịch hẹn này?')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('auth_token');
-      const response = await axios.delete(
-        `http://localhost:5000/api/appointments/${appointmentId}`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
-      );
-
-      if (response.data.success) {
-        await fetchAllAppointments();
-        alert('Hủy lịch hẹn thành công!');
-      }
-    } catch (err) {
-      console.error('Error cancelling appointment:', err);
-      alert(err.response?.data?.error?.message || 'Không thể hủy lịch hẹn. Vui lòng thử lại.');
-    }
-  };
-
-  // Get status label
-  const getStatusLabel = (status) => {
-    const labels = {
-      'booked': 'Đã đặt',
-      'checked_in': 'Đã check-in',
-      'completed': 'Hoàn thành',
-      'cancelled': 'Đã hủy'
-    };
-    return labels[status] || status;
-  };
-
-  // Get status color class
-  const getStatusClass = (status) => {
-    const classes = {
+  const getStatusBadgeClass = (status) => {
+    const statusMap = {
       'booked': 'status-booked',
       'checked_in': 'status-checked-in',
       'completed': 'status-completed',
       'cancelled': 'status-cancelled'
     };
-    return classes[status] || '';
+    return statusMap[status] || 'status-default';
   };
 
-  useEffect(() => {
-    if (user && user.role === 'admin') {
-      fetchAllAppointments();
-    }
-  }, [user]);
+  const getStatusText = (status) => {
+    const statusMap = {
+      'booked': 'Đã xác nhận – chờ check-in',
+      'checked_in': 'Đã check-in',
+      'completed': 'Hoàn thành',
+      'cancelled': 'Đã hủy'
+    };
+    return statusMap[status] || status;
+  };
 
-  // Check role - Only Admin can access
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="admin-appointments-container">
-        <div className="access-denied">
-          <h2>⛔ Không có quyền truy cập</h2>
-          <p>Chỉ quản trị viên mới có thể quản lý toàn bộ lịch hẹn hệ thống.</p>
-        </div>
-      </div>
-    );
-  }
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('vi-VN');
+  };
 
-  if (loading && appointments.length === 0) {
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const getEventTypeLabel = (eventType) => {
+    const labels = {
+      'appointment_created': 'Đặt lịch (Đã đăng nhập)',
+      'public_appointment_created': 'Đặt lịch (Công khai)',
+      'appointment_cancelled': 'Hủy lịch',
+      'appointment_rescheduled': 'Đổi lịch',
+      'appointment_checkin': 'Check-in'
+    };
+    return labels[eventType] || eventType;
+  };
+
+  const getEventIcon = (eventType) => {
+    const icons = {
+      'appointment_created': '📅',
+      'public_appointment_created': '🌐',
+      'appointment_cancelled': '❌',
+      'appointment_rescheduled': '🔄',
+      'appointment_checkin': '✅'
+    };
+    return icons[eventType] || '📋';
+  };
+
+  const filteredAppointments = appointments.filter(apt => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
     return (
-      <div className="admin-appointments-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Đang tải dữ liệu lịch hẹn...</p>
-        </div>
-      </div>
+      apt.patient_name?.toLowerCase().includes(search) ||
+      apt.patient_phone?.includes(search) ||
+      apt.doctor_name?.toLowerCase().includes(search) ||
+      apt.department_name?.toLowerCase().includes(search)
     );
-  }
+  });
 
   return (
     <div className="admin-appointments-container">
       {/* Header */}
       <div className="appointments-header">
         <div className="header-content">
-          <h1>📅 Quản lý Lịch hẹn Toàn hệ thống</h1>
-          <p>Quản lý và theo dõi tất cả lịch hẹn trong hệ thống</p>
+          <button className="btn-back" onClick={() => onNavigate && onNavigate('dashboard')}>
+            ← Quay lại
+          </button>
+          <div className="header-title">
+            <h1>Quản lý lịch hẹn</h1>
+            <p className="subtitle">Xem và quản lý tất cả lịch hẹn trong hệ thống</p>
+          </div>
         </div>
-        <div className="header-actions">
-          <button 
-            className="btn-refresh"
-            onClick={fetchAllAppointments}
-            disabled={loading}
+      </div>
+
+      {/* Breadcrumb */}
+      <nav className="breadcrumb">
+        <span className="breadcrumb-item" onClick={() => onNavigate && onNavigate('home')}>
+          Trang chủ
+        </span>
+        <span className="breadcrumb-separator">›</span>
+        <span className="breadcrumb-item" onClick={() => onNavigate && onNavigate('dashboard')}>
+          {isAdmin ? 'Dashboard Quản trị' : 'Dashboard Lễ tân'}
+        </span>
+        <span className="breadcrumb-separator">›</span>
+        <span className="breadcrumb-item active">Quản lý lịch hẹn</span>
+      </nav>
+
+      {/* Tab Navigation */}
+      <div className="tabs-navigation">
+        <button
+          className={`tab-button ${activeTab === 'appointments' ? 'active' : ''}`}
+          onClick={() => setActiveTab('appointments')}
+        >
+          📋 Tất cả ({appointments.length})
+        </button>
+        {isAdmin && (
+          <button
+            className={`tab-button ${activeTab === 'audit-logs' ? 'active' : ''}`}
+            onClick={() => setActiveTab('audit-logs')}
           >
-            🔄 {loading ? 'Đang tải...' : 'Làm mới'}
+            📝 Nhật ký hoạt động ({auditLogs.length})
           </button>
-        </div>
+        )}
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="alert alert-error">
-          <span>⚠️</span>
-          <span>{error}</span>
-          <button onClick={fetchAllAppointments} className="btn-retry">
-            Thử lại
-          </button>
-        </div>
-      )}
-
-      {/* Statistics Cards */}
-      <div className="stats-grid">
-        <div className="stat-card total">
-          <div className="stat-icon">📊</div>
-          <div className="stat-content">
-            <div className="stat-value">{stats.total}</div>
-            <div className="stat-label">Tổng lịch hẹn</div>
-          </div>
-        </div>
-        <div className="stat-card booked">
-          <div className="stat-icon">📋</div>
-          <div className="stat-content">
-            <div className="stat-value">{stats.booked}</div>
-            <div className="stat-label">Đã đặt</div>
-          </div>
-        </div>
-        <div className="stat-card checked-in">
-          <div className="stat-icon">✅</div>
-          <div className="stat-content">
-            <div className="stat-value">{stats.checkedIn}</div>
-            <div className="stat-label">Đã check-in</div>
-          </div>
-        </div>
-        <div className="stat-card completed">
-          <div className="stat-icon">✔️</div>
-          <div className="stat-content">
-            <div className="stat-value">{stats.completed}</div>
-            <div className="stat-label">Hoàn thành</div>
-          </div>
-        </div>
-        <div className="stat-card cancelled">
-          <div className="stat-icon">❌</div>
-          <div className="stat-content">
-            <div className="stat-value">{stats.cancelled}</div>
-            <div className="stat-label">Đã hủy</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="filters-section">
-        <div className="filters-header">
-          <h3>🔍 Bộ lọc</h3>
-          <button className="btn-reset-filters" onClick={resetFilters}>
-            🔄 Đặt lại bộ lọc
-          </button>
-        </div>
-        
-        <div className="filters-grid">
-          {/* Search */}
-          <div className="filter-group full-width">
-            <label>🔍 Tìm kiếm</label>
+      {/* Filters and Search */}
+      {activeTab === 'appointments' && (
+        <div className="appointments-controls">
+          <div className="search-box">
             <input
               type="text"
-              placeholder="Tìm theo tên bệnh nhân, email, SĐT hoặc mã lịch hẹn..."
-              value={filters.searchQuery}
-              onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
-              className="search-input"
+              placeholder="🔍 Tìm kiếm theo tên, SĐT, bác sĩ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          {/* Status Filter */}
-          <div className="filter-group">
-            <label>📊 Trạng thái</label>
+          <div className="filters">
             <select
               value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             >
-              <option value="all">Tất cả</option>
-              <option value="booked">Đã đặt</option>
+              <option value="">Tất cả trạng thái</option>
+              <option value="booked">Chờ check-in (đã xác nhận)</option>
               <option value="checked_in">Đã check-in</option>
               <option value="completed">Hoàn thành</option>
               <option value="cancelled">Đã hủy</option>
             </select>
-          </div>
 
-          {/* Date From */}
-          <div className="filter-group">
-            <label>📅 Từ ngày</label>
             <input
               type="date"
-              value={filters.dateFrom}
-              onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+              value={filters.date}
+              onChange={(e) => setFilters({ ...filters, date: e.target.value })}
             />
-          </div>
 
-          {/* Date To */}
-          <div className="filter-group">
-            <label>📅 Đến ngày</label>
+            <button className="btn-refresh" onClick={loadAppointments}>
+              🔄 Làm mới
+            </button>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'audit-logs' && (
+        <div className="appointments-controls">
+          <div className="filters">
             <input
               type="date"
-              value={filters.dateTo}
-              onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+              value={filters.date}
+              onChange={(e) => setFilters({ ...filters, date: e.target.value })}
+              placeholder="Lọc theo ngày"
             />
-          </div>
 
-          {/* Department Filter */}
-          <div className="filter-group">
-            <label>🏥 Chuyên khoa</label>
-            <select
-              value={filters.departmentId}
-              onChange={(e) => handleFilterChange('departmentId', e.target.value)}
-            >
-              <option value="all">Tất cả chuyên khoa</option>
-              {departments.map(dept => (
-                <option key={dept.id} value={dept.id}>
-                  {dept.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Doctor Filter */}
-          <div className="filter-group">
-            <label>👨‍⚕️ Bác sĩ</label>
-            <select
-              value={filters.doctorId}
-              onChange={(e) => handleFilterChange('doctorId', e.target.value)}
-            >
-              <option value="all">Tất cả bác sĩ</option>
-              {doctors.map(doctor => (
-                <option key={doctor.doctor_id} value={doctor.doctor_id}>
-                  {doctor.degree} {doctor.full_name}
-                </option>
-              ))}
-            </select>
+            <button className="btn-refresh" onClick={loadAuditLogs}>
+              🔄 Làm mới
+            </button>
           </div>
         </div>
+      )}
 
-        <div className="filter-results">
-          <span>Hiển thị <strong>{filteredAppointments.length}</strong> / {appointments.length} lịch hẹn</span>
-        </div>
-      </div>
-
-      {/* Appointments Table */}
-      <div className="appointments-table-section">
-        {filteredAppointments.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">📭</div>
-            <h3>Không tìm thấy lịch hẹn</h3>
-            <p>Không có lịch hẹn nào phù hợp với bộ lọc hiện tại.</p>
+      {/* Statistics Summary */}
+      {activeTab === 'appointments' && (
+        <div className="appointments-summary">
+          <div className="summary-card">
+            <span className="summary-label">Tổng số:</span>
+            <span className="summary-value">{filteredAppointments.length}</span>
           </div>
-        ) : (
-          <div className="table-responsive">
-            <table className="appointments-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Ngày khám</th>
-                  <th>Giờ khám</th>
-                  <th>Bệnh nhân</th>
-                  <th>Bác sĩ</th>
-                  <th>Chuyên khoa</th>
-                  <th>Triệu chứng</th>
-                  <th>Trạng thái</th>
-                  <th>Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAppointments.map((appointment) => (
-                  <tr key={appointment.appointment_id}>
-                    <td>#{appointment.appointment_id}</td>
-                    <td>
-                      {new Date(appointment.appointment_date).toLocaleDateString('vi-VN')}
-                    </td>
-                    <td>{appointment.time_slot}</td>
-                    <td>
-                      <div className="patient-cell">
-                        <div className="patient-name">{appointment.patient_name}</div>
-                        <div className="patient-contact">
-                          📧 {appointment.patient_email}<br />
-                          📱 {appointment.patient_phone}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="doctor-cell">
-                        {appointment.doctor_degree} {appointment.doctor_name}
-                      </div>
-                    </td>
-                    <td>{appointment.department_name}</td>
-                    <td>
-                      <div className="symptoms-cell">
-                        {appointment.symptoms || <em>Không có</em>}
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${getStatusClass(appointment.status)}`}>
-                        {getStatusLabel(appointment.status)}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
-                        {appointment.status === 'booked' && (
-                          <button
-                            className="btn-action btn-checkin"
-                            onClick={() => updateAppointmentStatus(appointment.appointment_id, 'checked_in')}
-                            title="Check-in"
-                          >
-                            ✅
-                          </button>
-                        )}
-                        {appointment.status === 'checked_in' && (
-                          <button
-                            className="btn-action btn-complete"
-                            onClick={() => updateAppointmentStatus(appointment.appointment_id, 'completed')}
-                            title="Hoàn thành"
-                          >
-                            ✔️
-                          </button>
-                        )}
-                        {(appointment.status === 'booked' || appointment.status === 'checked_in') && (
-                          <button
-                            className="btn-action btn-cancel"
-                            onClick={() => cancelAppointment(appointment.appointment_id)}
-                            title="Hủy lịch hẹn"
-                          >
-                            ❌
-                          </button>
-                        )}
-                        <button
-                          className="btn-action btn-view"
-                          onClick={() => window.open(`/appointment/${appointment.appointment_id}`, '_blank')}
-                          title="Xem chi tiết"
-                        >
-                          👁️
-                        </button>
-                      </div>
-                    </td>
+          <div className="summary-card booked">
+            <span className="summary-label">Chờ check-in:</span>
+            <span className="summary-value">
+              {filteredAppointments.filter(a => a.status === 'booked').length}
+            </span>
+          </div>
+          <div className="summary-card checked-in">
+            <span className="summary-label">Đã check-in:</span>
+            <span className="summary-value">
+              {filteredAppointments.filter(a => a.status === 'checked_in').length}
+            </span>
+          </div>
+          <div className="summary-card completed">
+            <span className="summary-label">Hoàn thành:</span>
+            <span className="summary-value">
+              {filteredAppointments.filter(a => a.status === 'completed').length}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {notice && (
+        <div className={`admin-notice is-${notice.type}`} role="status">
+          <span>{notice.text}</span>
+          <button type="button" onClick={() => setNotice(null)} aria-label="Đóng thông báo">×</button>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="error-message">
+          <span className="error-icon">⚠️</span>
+          {error}
+        </div>
+      )}
+
+      {/* Tab Content */}
+      {activeTab === 'appointments' && (
+        <>
+          {/* Loading State */}
+          {loading ? (
+            <div className="loading-container">
+              <div className="spinner"></div>
+              <p>Đang tải danh sách lịch hẹn...</p>
+            </div>
+          ) : filteredAppointments.length === 0 ? (
+            <div className="no-data">
+              <div className="no-data-icon">📅</div>
+              <h3>Không có lịch hẹn nào</h3>
+              <p>Chưa có lịch hẹn nào trong hệ thống</p>
+            </div>
+          ) : (
+            <div className="appointments-table-container">
+              <table className="appointments-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Bệnh nhân</th>
+                    <th>Số điện thoại</th>
+                    <th>Bác sĩ</th>
+                    <th>Chuyên khoa</th>
+                    <th>Ngày khám</th>
+                    <th>Giờ khám</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày tạo</th>
+                    {isAdmin && <th>Thao tác</th>}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {filteredAppointments.map((apt) => (
+                    <tr key={apt.id}>
+                      <td className="apt-id">{apt.booking_code || `#${apt.id}`}</td>
+                      <td className="patient-name">
+                        <strong>{apt.patient_name}</strong>
+                      </td>
+                      <td className="patient-phone">{apt.patient_phone}</td>
+                      <td className="doctor-name">{apt.doctor_name}</td>
+                      <td className="department">{apt.department_name}</td>
+                      <td className="apt-date">{formatDate(apt.appointment_date)}</td>
+                      <td className="time-slot">{apt.time_slot}</td>
+                      <td>
+                        <span className={`status-badge ${getStatusBadgeClass(apt.status)}`}>
+                          {getStatusText(apt.status)}
+                        </span>
+                      </td>
+                      <td className="created-date">{formatDate(apt.created_at)}</td>
+                      {isAdmin && (
+                        <td className="row-actions">
+                          <button
+                            type="button"
+                            className="btn-row is-edit"
+                            onClick={() => setEditing(apt)}
+                            title={apt.status === 'completed' ? 'Xem (đã khám – không sửa được)' : 'Sửa lịch hẹn'}
+                          >
+                            ✏️ {apt.status === 'completed' ? 'Xem' : 'Sửa'}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-row is-delete"
+                            onClick={() => handleDelete(apt)}
+                            disabled={deletingId === apt.id || ['checked_in', 'completed'].includes(apt.status) || (apt.payment_status && apt.payment_status !== 'unpaid')}
+                            title={['checked_in', 'completed'].includes(apt.status)
+                              ? 'Đã check-in/khám – không xoá được'
+                              : apt.payment_status && apt.payment_status !== 'unpaid'
+                                ? 'Đã thanh toán – không xoá được, hãy huỷ lịch'
+                                : 'Xoá lịch hẹn'}
+                          >
+                            🗑️ Xoá
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === 'audit-logs' && (
+        <>
+          {/* Loading State */}
+          {loading ? (
+            <div className="loading-container">
+              <div className="spinner"></div>
+              <p>Đang tải nhật ký hoạt động...</p>
+            </div>
+          ) : auditLogs.length === 0 ? (
+            <div className="no-data">
+              <div className="no-data-icon">📝</div>
+              <h3>Không có nhật ký nào</h3>
+              <p>Chưa có hoạt động đặt lịch nào trong hệ thống</p>
+            </div>
+          ) : (
+            <div className="audit-logs-table-container">
+              <table className="audit-logs-table">
+                <thead>
+                  <tr>
+                    <th>Thời gian</th>
+                    <th>Loại hoạt động</th>
+                    <th>Người dùng</th>
+                    <th>Chi tiết</th>
+                    <th>Địa chỉ IP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.map((log) => {
+                    let details = {};
+                    try {
+                      details = JSON.parse(log.event_details || '{}');
+                    } catch (e) {
+                      details = {};
+                    }
+
+                    return (
+                      <tr key={log.log_id}>
+                        <td className="timestamp-cell">
+                          {formatDateTime(log.timestamp)}
+                        </td>
+                        <td className="event-cell">
+                          <span className="event-icon">{getEventIcon(log.event_type)}</span>
+                          <span className="event-label">{getEventTypeLabel(log.event_type)}</span>
+                        </td>
+                        <td className="user-cell">
+                          User #{log.user_id}
+                        </td>
+                        <td className="details-cell">
+                          <div className="details-content">
+                            {details.appointmentId && (
+                              <div><strong>Lịch hẹn:</strong> #{details.appointmentId}</div>
+                            )}
+                            {details.patientName && (
+                              <div><strong>Bệnh nhân:</strong> {details.patientName}</div>
+                            )}
+                            {details.doctorName && (
+                              <div><strong>Bác sĩ:</strong> {details.doctorName}</div>
+                            )}
+                            {details.appointmentDate && (
+                              <div><strong>Ngày:</strong> {formatDate(details.appointmentDate)}</div>
+                            )}
+                            {details.timeSlot && (
+                              <div><strong>Giờ:</strong> {details.timeSlot}</div>
+                            )}
+                            {details.oldDate && details.newDate && (
+                              <div>
+                                <strong>Từ:</strong> {formatDate(details.oldDate)} {details.oldTimeSlot} 
+                                <br />
+                                <strong>Sang:</strong> {formatDate(details.newDate)} {details.newTimeSlot}
+                              </div>
+                            )}
+                            {details.checkedInBy && (
+                              <div><strong>Check-in bởi:</strong> {details.checkedInBy}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="ip-cell">
+                          <code>{log.ip_address}</code>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+      {editing && (
+        <AppointmentEditModal
+          appointment={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(message) => {
+            setEditing(null);
+            setNotice({ type: 'success', text: message });
+            loadAppointments();
+          }}
+        />
+      )}
     </div>
   );
 };

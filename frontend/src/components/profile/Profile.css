@@ -95,7 +95,7 @@
 
 /* Profile View Styles */
 .profile-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   color: white;
   padding: 40px;
   text-align: center;
@@ -252,7 +252,7 @@
 }
 
 .section-icon {
-  color: #667eea;
+  color: #26a69a;
 }
 
 .section-title.warning .section-icon {
@@ -389,7 +389,7 @@
 /* Profile Edit Styles */
 .profile-edit-header,
 .change-password-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   color: white;
   padding: 40px;
   text-align: center;
@@ -483,20 +483,20 @@
 }
 
 .password-toggle:hover {
-  color: #667eea;
+  color: #26a69a;
 }
 
 .password-toggle:focus {
-  outline: 2px solid #667eea;
+  outline: 2px solid #26a69a;
   outline-offset: 2px;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #26a69a;
   background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(38, 166, 154, 0.1);
 }
 
 .form-group input.valid {
@@ -518,7 +518,7 @@
 }
 
 .info-text {
-  color: #3182ce;
+  color: #108578;
   font-size: 14px;
   margin-top: 6px;
   display: flex;
@@ -640,7 +640,7 @@
 
 .tips-list li:before {
   content: "•";
-  color: #3182ce;
+  color: #108578;
   font-weight: bold;
   position: absolute;
   left: 0;
@@ -675,13 +675,13 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 10px 20px rgba(38, 166, 154, 0.3);
 }
 
 .btn-primary:disabled {
@@ -953,7 +953,7 @@
   .form-group input:focus,
   .form-group select:focus {
     background: #4a5568;
-    border-color: #667eea;
+    border-color: #26a69a;
   }
 
   .error-content h3 {

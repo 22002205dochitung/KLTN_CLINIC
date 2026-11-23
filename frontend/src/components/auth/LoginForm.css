@@ -1,0 +1,287 @@
+/* Login / forgot password – compact card used inside AuthModal */
+.lg {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px 26px 22px;
+  font-family: var(--font, 'Be Vietnam Pro', system-ui, sans-serif);
+  color: var(--ink, #0f172a);
+}
+
+.lg-head {
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.lg-logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  margin-bottom: 6px;
+}
+
+.lg-head h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--brand, #108578);
+}
+
+.lg-head p {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--muted, #64748b);
+}
+
+.lg-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.lg-alert.is-err {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.lg-alert.is-ok {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.lg-alert.is-demo {
+  background: #fffbeb;
+  border: 1px dashed #f59e0b;
+  color: #92400e;
+}
+
+.lg-alert .lg-link {
+  align-self: flex-start;
+}
+
+.lg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.lg-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2, #334155);
+}
+
+.lg input[type='text'],
+.lg input[type='email'],
+.lg input[type='password'],
+.lg-field input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--line, #cbd5e1);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 14.5px;
+  color: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.lg-field input:focus {
+  outline: none;
+  border-color: var(--brand-600, #26a69a);
+  box-shadow: 0 0 0 3px rgba(38, 166, 154, 0.15);
+}
+
+.lg-field input[aria-invalid='true'] {
+  border-color: #f87171;
+}
+
+.lg-pw {
+  position: relative;
+}
+
+.lg-pw input {
+  padding-right: 44px;
+}
+
+.lg-eye {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.lg-eye:hover {
+  background: var(--brand-50, #f1faf8);
+}
+
+.lg-caps {
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lg-code {
+  text-align: center;
+  font-size: 22px !important;
+  font-weight: 700;
+  letter-spacing: 10px;
+}
+
+.lg-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lg-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--ink-2, #334155);
+  cursor: pointer;
+}
+
+.lg-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand, #108578);
+}
+
+.lg-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--brand, #108578);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lg-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.lg-link:disabled {
+  color: var(--muted, #94a3b8);
+  cursor: default;
+}
+
+.lg-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  margin-top: 2px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent, #f97316);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.28);
+  transition: background 0.15s;
+}
+
+.lg-submit:hover:not(:disabled) {
+  background: var(--accent-600, #ea580c);
+}
+
+.lg-submit:disabled {
+  opacity: 0.75;
+  cursor: progress;
+}
+
+.lg-spin {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: lg-spin 0.7s linear infinite;
+}
+
+@keyframes lg-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lg-foot {
+  margin: 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--muted, #64748b);
+}
+
+.lg-foot .lg-link {
+  font-size: 13.5px;
+}
+
+.lg-demo {
+  padding-top: 10px;
+  border-top: 1px dashed var(--line, #e2e8f0);
+  font-size: 12px;
+  color: var(--muted, #64748b);
+}
+
+.lg-demo div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.lg-demo button {
+  height: 30px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 8px;
+  background: var(--brand-50, #f1faf8);
+  color: var(--brand, #108578);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lg-demo button:hover:not(:disabled) {
+  border-color: var(--brand-600, #26a69a);
+}
+
+/* the modal is narrower for login */
+.auth-modal-content:has(> .lg) {
+  max-width: 420px;
+  border-radius: 16px;
+}
+
+@media (max-width: 480px) {
+  .lg {
+    padding: 22px 16px 18px;
+  }
+
+  .lg-demo div {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

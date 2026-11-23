@@ -1,0 +1,183 @@
+.ss {
+  margin: 4px 0 18px;
+  padding: 14px;
+  border: 1px solid #b9ece5;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f1faf8 0%, #ffffff 100%);
+}
+
+.ss-empty {
+  color: #108578;
+  font-size: 14px;
+}
+
+.ss-loading {
+  color: #64748b;
+}
+
+.ss-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ss-head strong {
+  display: block;
+  font-size: 16px;
+  color: #108578;
+}
+
+.ss-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.ss-hide,
+.ss-show {
+  border: none;
+  background: transparent;
+  color: #108578;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ss-show {
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.ss-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.ss-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.ss-card.is-top {
+  border-color: #5ec9bc;
+  box-shadow: 0 2px 10px rgba(94, 201, 188, 0.15);
+}
+
+.ss-card.is-applied {
+  border: 2px solid #108578;
+  background: #f1faf8;
+}
+
+.ss-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.ss-dept {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.ss-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #d9f5f0;
+  color: #108578;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ss-badge.is-followup {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.ss-reasons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  color: #334155;
+}
+
+.ss-doctor,
+.ss-slot {
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.ss-doctor span {
+  color: #64748b;
+}
+
+.ss-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.ss-btn {
+  padding: 7px 12px;
+  border: 1px solid #b9ece5;
+  border-radius: 8px;
+  background: #fff;
+  color: #108578;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ss-btn.is-primary {
+  border-color: #108578;
+  background: #108578;
+  color: #fff;
+}
+
+.ss-btn:focus-visible,
+.ss-hide:focus-visible,
+.ss-show:focus-visible {
+  outline: 3px solid #8edfd4;
+  outline-offset: 2px;
+}
+
+.ss-note {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #92400e;
+}
+
+.ss-disclaimer {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* star on recommended time slots */
+.slot-star {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #b45309;
+}
+
+.slot-rec-note {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 13px;
+}

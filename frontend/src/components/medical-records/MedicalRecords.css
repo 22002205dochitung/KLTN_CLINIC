@@ -14,7 +14,7 @@
   background: white;
   padding: 24px;
   border-radius: 16px;
-  border-left: 5px solid #0ea5e9;
+  border-left: 5px solid #26a69a;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s, box-shadow 0.3s;
   cursor: pointer;
@@ -27,7 +27,7 @@
 }
 
 .medical-record-card:focus {
-  outline: 2px solid #0ea5e9;
+  outline: 2px solid #26a69a;
   outline-offset: 2px;
 }
 
@@ -122,7 +122,7 @@
 
 .btn-view-details {
   padding: 10px 24px;
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -134,7 +134,7 @@
 
 .btn-view-details:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  box-shadow: 0 4px 12px rgba(38, 166, 154, 0.3);
 }
 
 /* ========================================
@@ -150,12 +150,12 @@
 }
 
 .history-header {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   padding: 30px;
   border-radius: 16px;
   color: white;
   margin-bottom: 30px;
-  box-shadow: 0 10px 30px rgba(14, 165, 233, 0.3);
+  box-shadow: 0 10px 30px rgba(38, 166, 154, 0.3);
 }
 
 .history-header h1 {
@@ -229,8 +229,8 @@
 .btn-back {
   padding: 10px 20px;
   background: white;
-  color: #0ea5e9;
-  border: 2px solid #0ea5e9;
+  color: #26a69a;
+  border: 2px solid #26a69a;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
@@ -239,7 +239,7 @@
 }
 
 .btn-back:hover {
-  background: #0ea5e9;
+  background: #26a69a;
   color: white;
 }
 
@@ -451,7 +451,7 @@
 
 .form-control:focus {
   outline: none;
-  border-color: #0ea5e9;
+  border-color: #26a69a;
 }
 
 .form-control.error {
@@ -541,7 +541,7 @@ textarea.form-control {
   background: white;
   padding: 24px;
   border-radius: 12px;
-  border-left: 4px solid #8b5cf6;
+  border-left: 4px solid var(--brand-600, #26a69a);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   position: relative;
 }
@@ -585,8 +585,8 @@ textarea.form-control {
   width: 100%;
   padding: 14px;
   background: white;
-  color: #8b5cf6;
-  border: 2px dashed #8b5cf6;
+  color: var(--brand, #108578);
+  border: 2px dashed var(--brand-600, #26a69a);
   border-radius: 8px;
   font-size: 15px;
   font-weight: 600;
@@ -599,7 +599,7 @@ textarea.form-control {
 }
 
 .btn-add-prescription:hover {
-  background: #f5f3ff;
+  background: var(--brand-50, #f1faf8);
 }
 
 /* ========================================
@@ -689,7 +689,7 @@ textarea.form-control {
   width: 50px;
   height: 50px;
   border: 5px solid #f3f4f6;
-  border-top: 5px solid #0ea5e9;
+  border-top: 5px solid #26a69a;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
@@ -725,7 +725,7 @@ textarea.form-control {
 
 .btn-retry {
   padding: 12px 30px;
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -737,7 +737,7 @@ textarea.form-control {
 
 .btn-retry:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  box-shadow: 0 4px 12px rgba(38, 166, 154, 0.3);
 }
 
 /* ========================================
@@ -859,4 +859,28 @@ textarea.form-control {
     box-shadow: none;
     page-break-inside: avoid;
   }
+}
+
+/* Prescribing from the medicine catalogue */
+.presc-med-info {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #047857;
+}
+
+.presc-med-info.is-short {
+  color: #b45309;
+  font-weight: 600;
+}
+
+.presc-med-info.is-outside {
+  color: #64748b;
+}
+
+.presc-estimate {
+  margin: 4px 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f1faf8;
+  color: #0f172a;
 }

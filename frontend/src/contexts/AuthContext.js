@@ -149,6 +149,11 @@ export const AuthProvider = ({ children }) => {
       setError(null);
 
       const response = await authAPI.register(userData);
+
+      // Account created, e-mail must be confirmed with an OTP before the first login
+      if (response.success && response.requiresOtp) {
+        return response;
+      }
       
       if (response.success && response.user && response.token) {
         // Store token and update user state

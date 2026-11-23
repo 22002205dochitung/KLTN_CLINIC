@@ -135,6 +135,31 @@ router.get('/manage',
  * - 3.6: Return 403 Forbidden for unauthorized access attempts
  * - 9.6: Admin can change other users' roles
  */
+/**
+ * GET /api/users/search?query=   - Staff search patients (receptionist lookup)
+ * GET /api/users/doctor-info     - Logged-in doctor's doctor profile (doctor queue)
+ * DELETE /api/users/:id          - Admin deletes an account with no history
+ */
+router.get('/search',
+    verifyToken,
+    requireRole(['receptionist', 'admin', 'doctor']),
+    globalRateLimit,
+    userController.searchUsers
+);
+
+router.get('/doctor-info',
+    verifyToken,
+    requireRole('doctor'),
+    userController.getDoctorInfo
+);
+
+router.delete('/:id',
+    verifyToken,
+    requireRole('admin'),
+    globalRateLimit,
+    userController.deleteUser
+);
+
 router.put('/:id/role',
     verifyToken, // Validates Requirements 8.1, 8.3, 8.4
     requireRole('admin'), // Validates Requirements 3.4, 3.6

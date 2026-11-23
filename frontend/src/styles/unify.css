@@ -1,0 +1,492 @@
+/* =====================================================================
+   One page layout for every menu page.
+   Standard (same as "Thu ngân"): full-width page, plain header on the page
+   background – title + subtitle on the left, actions/back on the right –
+   then white bordered cards. Loaded after theme.css.
+   ===================================================================== */
+
+/* ---------- 1. Page wrappers: full width, no outer card ---------- */
+.app .appointment-history-container,
+.app .payment-history-container,
+.app .my-qr-container,
+.app .qr-scanner-container,
+.app .admin-appointments-container,
+.app .user-management-container,
+.app .admin-statistics-container,
+.app .security-dashboard,
+.app .medical-records-page,
+.app .medical-records-container,
+.app .dashboard-container,
+.app .cashier-container,
+.app .pm-container,
+.app .dq {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+/* cards that used to hold the coloured header become plain containers */
+.app .my-qr-card,
+.app .scanner-card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.app .my-qr-card > :not(.qr-header),
+.app .scanner-card > :not(.scanner-header) {
+  background: var(--surface, #fff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: var(--radius, 12px);
+}
+
+/* ---------- 2. Page header ---------- */
+.app .history-header,
+.app .qr-header,
+.app .scanner-header,
+.app .appointments-header,
+.app .user-management-header,
+.app .stats-header,
+.app .security-dashboard > .dashboard-header,
+.app .dashboard-header:has(> .btn-secondary, > .btn, > .header-actions),
+.app .dashboard-header:has(> button),
+.app .cashier-header,
+.app .dq-head,
+.app .medical-records-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px 12px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink, #0f172a);
+  text-align: left;
+}
+
+/* wrappers around the title are flattened so title / subtitle / actions line up */
+.app .history-header > div:not([class*='stat']):not([class*='action']),
+.app .user-management-header > div,
+.app .appointments-header .header-content,
+.app .appointments-header .header-title,
+.app .stats-header > div:not([class*='action']),
+.app .security-dashboard > .dashboard-header > div:not(.header-actions),
+.app .dashboard-header:has(> button, > .btn, > .header-actions) > .dashboard-welcome {
+  display: contents;
+}
+
+.app :is(.history-header, .qr-header, .scanner-header, .appointments-header, .user-management-header, .stats-header,
+  .security-dashboard > .dashboard-header, .dashboard-header:has(> button, > .btn, > .header-actions),
+  .cashier-header, .dq-head, .medical-records-header) :is(h1, h2) {
+  flex: 1 1 auto;
+  order: 0;
+  margin: 0;
+  color: var(--ink, #0f172a);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.3;
+  text-shadow: none;
+  -webkit-text-fill-color: currentColor;
+  background: none;
+}
+
+.app :is(.history-header, .qr-header, .scanner-header, .appointments-header, .user-management-header, .stats-header,
+  .security-dashboard > .dashboard-header, .dashboard-header:has(> button, > .btn, > .header-actions),
+  .dq-head, .medical-records-header) p {
+  flex: 1 0 100%;
+  order: 2;
+  margin: 0;
+  color: var(--muted, #64748b);
+  font-size: 13.5px;
+  opacity: 1;
+}
+
+/* actions & back buttons go to the right of the title */
+.app :is(.history-header, .appointments-header, .user-management-header, .stats-header,
+  .security-dashboard > .dashboard-header, .dashboard-header:has(> button, > .btn, > .header-actions)) :is(button, .header-actions) {
+  order: 1;
+}
+
+/* stats that sit inside some headers wrap below the subtitle */
+.app .history-header .header-stats {
+  flex: 1 0 100%;
+  order: 3;
+  margin-top: 10px;
+}
+
+.app .cashier-header h1 {
+  font-size: 22px;
+}
+
+/* ---------- 3. Back buttons: one small outline style everywhere ---------- */
+.app .btn-back,
+.app .dashboard-header .btn-secondary,
+.app .cashier-btn.cashier-btn-secondary,
+.app .dq-btn.is-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid var(--line, #cbd5e1);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink-2, #334155);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: none;
+  cursor: pointer;
+  transform: none;
+}
+
+.app .btn-back:hover,
+.app .dashboard-header .btn-secondary:hover,
+.app .cashier-btn.cashier-btn-secondary:hover,
+.app .dq-btn.is-ghost:hover {
+  border-color: var(--brand-600, #26a69a);
+  color: var(--brand, #108578);
+  background: var(--brand-50, #f1faf8);
+}
+
+/* primary header actions (Thêm người dùng …) */
+.app .btn-add-user,
+.app .header-actions .refresh-btn {
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--brand, #108578);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+/* ---------- 4. Breadcrumbs inside pages are redundant with the menu ---------- */
+.app .admin-appointments-container > .breadcrumb {
+  display: none;
+}
+
+/* ---------- 5. Tables: same header & rows everywhere ---------- */
+.app :is(.page-content) table thead th,
+.app :is(.page-content) table th {
+  background: #f1f5f9;
+  background-image: none;
+  color: var(--ink-2, #334155);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+.app .page-content table thead tr,
+.app .page-content table thead {
+  background: #f1f5f9;
+  background-image: none;
+}
+
+.app .page-content table td {
+  border-bottom: 1px solid #eef2f6;
+}
+
+.app .page-content table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* ---------- 6. Sections / cards ---------- */
+.app .stats-section,
+.app .filters-section,
+.app .appointments-table-container,
+.app .users-table-container,
+.app .security-dashboard .dashboard-section,
+.app .payment-card,
+.app .appointment-card {
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: var(--radius, 12px);
+  box-shadow: none;
+}
+
+/* ---------- 7. Title block grows so actions sit at the far right ---------- */
+.app .cashier-header > div:first-child,
+.app .dq-head > div:first-child {
+  flex: 1 1 auto;
+}
+
+.app .cashier-header,
+.app .dq-head {
+  justify-content: space-between;
+}
+
+/* ---------- 8. Stat tiles: white, number coloured ---------- */
+.app .appointments-summary .summary-card,
+.app .appointments-summary .summary-card:is(.booked, .checked-in, .completed) {
+  padding: 12px 16px;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: var(--radius, 12px);
+  background: #fff;
+  box-shadow: none;
+}
+
+.app .summary-card.booked .summary-value { color: #b45309; }
+.app .summary-card.checked-in .summary-value { color: var(--brand, #108578); }
+.app .summary-card.completed .summary-value { color: #15803d; }
+
+/* ---------- 9. Tabs: brand colour everywhere ---------- */
+.app .stats-tabs .tab.active,
+.app .stats-tabs .tab:hover {
+  background: var(--brand, #108578);
+  border-color: var(--brand, #108578);
+  color: #fff;
+}
+
+/* ---------- 10. Lists of cards use the full width ---------- */
+.app .appointment-history-container .appointments-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 12px;
+  max-width: none;
+}
+
+.app .appointment-history-container .appointment-card {
+  margin: 0;
+  box-shadow: none;
+  border: 1px solid var(--line, #e2e8f0);
+}
+
+/* ---------- 11. Profile: compact horizontal header ---------- */
+.app .profile-view-container,
+.app .profile-edit-container,
+.app .change-password-container {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.app .profile-view-container .profile-card {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: var(--radius, 12px);
+  box-shadow: none;
+}
+
+.app .profile-view-container .profile-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 18px 22px;
+  text-align: left;
+  background: linear-gradient(120deg, #108578, #26a69a 60%, #5ec9bc);
+}
+
+.app .profile-view-container .profile-avatar {
+  width: 64px;
+  height: 64px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.app .profile-view-container .profile-avatar svg {
+  width: 36px;
+  height: 36px;
+}
+
+.app .profile-view-container .profile-info {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.app .profile-view-container .profile-name {
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+.app .profile-view-container .profile-actions {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.app .profile-view-container .profile-actions button {
+  width: auto;
+  height: 36px;
+  margin: 0;
+  padding: 0 16px;
+  font-size: 13.5px;
+}
+
+.app :is(.profile-edit-container, .change-password-container) > * {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* role badge outside the coloured header was light text on white (looked empty) */
+.app .profile-content .role-badge {
+  border: none;
+  font-size: 12px;
+  padding: 4px 12px;
+}
+.app .profile-content .role-badge.role-patient { background: #e0f2fe; color: #075985; }
+.app .profile-content .role-badge.role-doctor { background: #dcfce7; color: #166534; }
+.app .profile-content .role-badge.role-receptionist { background: #fef3c7; color: #92400e; }
+.app .profile-content .role-badge.role-admin { background: #fee2e2; color: #991b1b; }
+
+.app .profile-view-container .profile-actions button {
+  white-space: nowrap;
+}
+
+.app .appointment-history-container .appointments-list {
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
+
+@media (max-width: 600px) {
+  .app .appointment-history-container .appointments-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* wide tables scroll inside their own box instead of widening the page */
+.app :is(.cashier-table-wrap, .audit-table-container, .users-table-container, .prescriptions-table-container,
+  .audit-logs-table-container, .appointments-table-container) {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 700px) {
+  .app .cashier-table-cards td:last-child {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    white-space: normal;
+  }
+}
+
+/* Dashboard shortcut cards: icon on the left, title above description
+   (as a 3-column flex row the title was squeezed to one word per line) */
+.app .dashboard-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  column-gap: 12px;
+  row-gap: 2px;
+  align-items: start;
+}
+
+.app .dashboard-card .card-icon {
+  grid-row: 1 / span 2;
+}
+
+.app .dashboard-card :is(h3, .card-title, p, .card-description) {
+  grid-column: 2;
+}
+
+/* name/role on the greeting banner: grey text on teal was hard to read */
+.app .dashboard-header .dashboard-user-info :is(.user-name, .user-role, .user-details) {
+  color: #fff;
+}
+
+.app .dashboard-header .dashboard-user-info .user-role {
+  opacity: 0.85;
+}
+
+/* the booking card clipped the date picker / search lists (last week of the month was cut off) */
+.app .simple-booking-form,
+.app .booking-container,
+.app .booking-form-panel,
+.app .booking-page-shell,
+.app .form-panel {
+  overflow: visible;
+}
+
+/* decorations no longer clipped by the booking card must not widen the page
+   (clip – unlike hidden – keeps the vertical overflow of pop-ups visible) */
+.app .page-content {
+  overflow-x: clip;
+}
+
+/* Prescription form: the subtitle was white text for the old gradient header */
+.app .prescriptions-form-container .form-header .form-subtitle {
+  color: var(--ink-2, #475569);
+}
+
+/* Booking number (261125-TMH-001): readable, easy to read out at the desk */
+.app .booking-code-value {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--brand, #108578);
+}
+
+.app .booking-code-chip {
+  display: inline-block;
+  margin: 4px 0 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--brand-50, #f1faf8);
+  border: 1px solid var(--brand-100, #d9f5f0);
+  color: var(--brand, #108578);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.app .checkin-code {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  color: var(--brand, #108578);
+  font-weight: 700;
+}
+
+.app .booking-code-ticket {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  width: fit-content;
+  max-width: 100%;
+  margin: 10px auto 16px;
+  padding: 12px 22px;
+  border: 2px dashed var(--brand-600, #26a69a);
+  border-radius: 14px;
+  background: var(--brand-50, #f1faf8);
+  text-align: center;
+}
+
+.app .booking-code-ticket span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.app .booking-code-ticket strong {
+  color: var(--brand, #108578);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: clamp(24px, 5vw, 34px);
+  font-weight: 800;
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+
+.app .booking-code-ticket small {
+  color: #475569;
+  font-size: 13px;
+}

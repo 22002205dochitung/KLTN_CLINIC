@@ -6,13 +6,27 @@ import ProtectedRoute from './components/routing/ProtectedRoute';
 import ProfileManager from './components/profile/ProfileManager';
 import DashboardRouter from './components/dashboards/DashboardRouter';
 import { MedicalHistory, MedicalRecordDetails } from './components/medical-records';
+import PatientRecordsLookup from './components/medical-records/PatientRecordsLookup';
+import ClinicCatalog from './components/admin/ClinicCatalog';
+import RecommendationSettings from './components/admin/RecommendationSettings';
+import MedicineCatalog from './components/admin/MedicineCatalog';
+import DoctorShifts from './components/admin/DoctorShifts';
+import DoctorDirectory from './components/doctors/DoctorDirectory';
+import HomeStore from './components/home/HomeStore';
+import SecurityDashboard from './components/admin/SecurityDashboard';
+import DoctorQueue from './components/doctor/DoctorQueue';
 import QRScanner from './components/checkin/QRScanner';
 import { MyQRCode } from './components/patient';
-import { UserManagement } from './components/admin';
-import { SmartBookingSuggestion } from './components/smart-booking';
-import { SaveMedicalRecord } from './components/doctor';
-import { AppointmentHistory } from './components/appointments';
+import { UserManagement, AdminStatistics } from './components/admin';
+import AdminAppointments from './components/admin/AdminAppointments';
+import { DoctorExamFlow, DoctorSchedule, DoctorFollowUps, DoctorLeaves } from './components/doctor';
+import { AppointmentHistory, SimpleBookingForm } from './components/appointments';
+import { PaymentHistory, CashierDesk, PaymentManagement } from './components/payment';
 import './App.css';
+import { API_ORIGIN } from './config/api';
+import NotificationBell from './components/common/NotificationBell';
+import DoctorRatings from './components/admin/DoctorRatings';
+import QueueBoard from './components/queue/QueueBoard';
 
 function App() {
   return (
@@ -24,16 +38,30 @@ function App() {
 
 function AppContent() {
   const [apiMessage, setApiMessage] = useState('Đang kết nối tới Backend...');
-  const [currentPage, setCurrentPage] = useState('home'); // 'home', 'booking', 'medical-records', 'qr-checkin', 'my-qr', 'doctor-medical-records', 'patient-medical-history', 'medical-record-details'
+  // Bumped on every menu click so re-clicking the current page resets its inner view
+  const [navNonce, setNavNonce] = useState(0);
+  // Phone layout: the menu is collapsed behind a ☰ button (it used to fill half the screen)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // Start page can come from the URL (?page=booking) - used by the installed app's shortcuts
+  const [currentPage, setCurrentPage] = useState(() => {
+    try {
+      const page = new URLSearchParams(window.location.search).get('page');
+      return page && /^[a-z-]{2,40}$/.test(page) ? page : 'home';
+    } catch (e) {
+      return 'home';
+    }
+  }); // 'home', 'booking', 'medical-records', 'qr-checkin', 'my-qr', 'doctor-medical-records', 'patient-medical-history', 'medical-record-details'
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [selectedRecordId, setSelectedRecordId] = useState(null); // For viewing medical record details
   const [pageData, setPageData] = useState(null); // Additional data for specific pages
+  const [bookingSuggestion, setBookingSuggestion] = useState(null);
   const { user, logout } = useAuth();
 
   // Kiểm tra gọi API từ Backend (port 5000) ngay khi trang load
   useEffect(() => {
-    fetch('http://localhost:5000/')
+    fetch(`${API_ORIGIN}/`)
       .then(res => res.json())
       .then(data => setApiMessage(data.message))
       .catch(err => setApiMessage('Không thể kết nối đến Backend Server!'));
@@ -66,12 +94,53 @@ function AppContent() {
           });
         }
 
+        // Doctor / specialty search (use case 3.2.2.3)
+        if (user.role === 'patient') {
+          roleBasedItems.push({ id: 'doctors', label: 'Bác sĩ', roles: ['patient'] });
+        }
+
         // Medical Records - Admin, Doctor, Patient (Doctor and Admin can see all, Patient sees their own)
         roleBasedItems.push({
           id: 'medical-records',
           label: 'Hồ sơ y tế',
           roles: ['patient', 'doctor', 'receptionist', 'admin']
         });
+
+        // Appointment history - Patient only (was reachable only through a dashboard card)
+        if (user.role === 'patient') {
+          roleBasedItems.push({
+            id: 'appointment-history',
+            label: 'Lịch hẹn của tôi',
+            roles: ['patient']
+          });
+        }
+
+        // Payment History - Patient only (to view their payment history)
+        if (user.role === 'patient') {
+          roleBasedItems.push({
+            id: 'payment-history',
+            label: 'Lịch sử thanh toán',
+            roles: ['patient']
+          });
+        }
+
+        // Cashier desk - Receptionist, Admin (collect consultation & medication payments)
+        if (user.role === 'receptionist' || user.role === 'admin') {
+          roleBasedItems.push({
+            id: 'cashier',
+            label: 'Thu ngân',
+            roles: ['receptionist', 'admin']
+          });
+        }
+
+        // Payment management - Admin only (revenue, transactions, consultation fees)
+        if (user.role === 'admin') {
+          roleBasedItems.push({
+            id: 'payment-management',
+            label: 'Doanh thu',
+            roles: ['admin']
+          });
+        }
 
         // My QR Code - Only Patient (to show QR for receptionist to scan)
         if (user.role === 'patient') {
@@ -89,6 +158,12 @@ function AppContent() {
             label: 'Quét QR Check-in',
             roles: ['receptionist', 'admin']
           });
+          // Lobby screen with the queue (open it on the TV in the waiting room)
+          roleBasedItems.push({
+            id: 'queue-board',
+            label: 'Màn hình hàng đợi',
+            roles: ['receptionist', 'admin']
+          });
         }
 
         return [...baseItems, ...roleBasedItems];
@@ -98,15 +173,36 @@ function AppContent() {
       return [
         ...baseItems,
         { id: 'booking', label: 'Đặt lịch khám', roles: ['all'] },
+        { id: 'doctors', label: 'Bác sĩ', roles: ['all'] },
         { id: 'medical-records', label: 'Hồ sơ y tế', roles: ['all'] }
       ];
     };
 
     const menuItems = getMenuItems();
+    const go = (page, data = null) => { setCurrentPage(page); setPageData(data); setNavNonce((n) => n + 1); setMobileNavOpen(false); };
+    const canBook = !user || user.role !== 'doctor';
 
     return (
-      <nav className="navbar">
+      <header className="site-header">
+      <div className="topbar">
+        <div className="topbar-inner">
+          <span>🕒 Thứ 2 – Thứ 7 · 08:00 – 17:00</span>
+          <span>📞 Hotline <b>1900-1234</b></span>
+          <span className="topbar-extra">✨ Gợi ý lịch khám thông minh · Check-in bằng mã QR · Thanh toán VietQR</span>
+        </div>
+      </div>
+      <nav className={`navbar ${mobileNavOpen ? 'is-open' : ''}`}>
         <div className="nav-container">
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-label={mobileNavOpen ? 'Đóng menu' : 'Mở menu'}
+            aria-expanded={mobileNavOpen}
+            aria-controls="main-nav-menu"
+            onClick={() => setMobileNavOpen((o) => !o)}
+          >
+            {mobileNavOpen ? '✕' : '☰'}
+          </button>
           <div className="nav-logo">
             <img 
               src={`${process.env.PUBLIC_URL}/img/logo.png`}
@@ -132,14 +228,28 @@ function AppContent() {
               }}
             />
             <div className="logo-fallback" style={{ display: 'none' }}>TC</div>
-            <span className="clinic-name">THCT CLINIC</span>
+            <span className="clinic-name" role="link" tabIndex={0} onClick={() => go('home')} onKeyDown={(e) => e.key === 'Enter' && go('home')}>
+              THCT CLINIC<small>Chăm sóc sức khoẻ thông minh</small>
+            </span>
           </div>
-          <div className="nav-menu">
+          <form
+            className="nav-search"
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const q = new FormData(e.currentTarget).get('q');
+              go('doctors', { query: String(q || '').trim() });
+            }}
+          >
+            <input name="q" type="search" placeholder="Tìm bác sĩ, chuyên khoa, triệu chứng…" aria-label="Tìm bác sĩ, chuyên khoa hoặc triệu chứng" />
+            <button type="submit" aria-label="Tìm kiếm">🔍</button>
+          </form>
+          <div className="nav-menu" id="main-nav-menu">
             {menuItems.map(item => (
               <a
                 key={item.id}
                 href="#"
-                onClick={() => setCurrentPage(item.id)}
+                onClick={() => { setCurrentPage(item.id); setPageData(null); setNavNonce((n) => n + 1); setMobileNavOpen(false); }}
                 className={currentPage === item.id ? 'active' : ''}
               >
                 {item.label}
@@ -147,6 +257,9 @@ function AppContent() {
             ))}
           </div>
           <div className="nav-contact">
+            {canBook && (
+              <button type="button" className="nav-cta" onClick={() => go('booking')}>📅 Đặt lịch khám</button>
+            )}
             {user ? (
               <div className="user-menu">
                 <span className="user-name">
@@ -158,11 +271,28 @@ function AppContent() {
                     {user.role === 'receptionist' && '👔 Lễ tân'}
                   </span>
                 </span>
+                <NotificationBell
+                  userId={user.id || user.email}
+                  onNavigate={(page) => { setCurrentPage(page); setPageData(null); setNavNonce((n) => n + 1); setMobileNavOpen(false); }}
+                />
                 <div className="user-dropdown">
                   <button className="user-avatar">{user.fullName.charAt(0).toUpperCase()}</button>
                   <div className="dropdown-content">
-                    <a href="#" onClick={() => setCurrentPage('profile')}>Hồ sơ cá nhân</a>
-                    <a href="#" onClick={() => logout()}>Đăng xuất</a>
+                    <a href="#" onClick={() => { setCurrentPage('profile'); setMobileNavOpen(false); }}>Hồ sơ cá nhân</a>
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setMobileNavOpen(false);
+                        // use case "Đăng xuất": confirm first, Cancel keeps the session
+                        if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
+                          logout();
+                          setCurrentPage('home');
+                        }
+                      }}
+                    >
+                      Đăng xuất
+                    </a>
                   </div>
                 </div>
               </div>
@@ -176,175 +306,12 @@ function AppContent() {
                 </button>
               </div>
             )}
-            <div className="hotline">
-              <span>Hotline: 1900-1234</span>
-            </div>
           </div>
         </div>
       </nav>
+      </header>
     );
   };
-
-  // Hero Section with Image Slider
-  const HeroSection = () => {
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const images = [
-      `${process.env.PUBLIC_URL}/img/bia.png`,
-      `${process.env.PUBLIC_URL}/img/bia2.png`
-    ];
-
-    useEffect(() => {
-      const timer = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % images.length);
-      }, 4000); // Change slide every 4 seconds
-
-      return () => clearInterval(timer);
-    }, [images.length]);
-
-    return (
-      <section className="hero">
-        <div className="hero-slider">
-          {images.map((image, index) => (
-            <div
-              key={index}
-              className={`hero-slide ${index === currentSlide ? 'active' : ''}`}
-              style={{ backgroundImage: `url(${image})` }}
-            >
-            </div>
-          ))}
-        </div>
-        
-        <div className="hero-content">
-          <div className="hero-text">
-          </div>
-        </div>
-
-        {/* Side Action Buttons */}
-        <div className="hero-side-actions">
-          <div className="side-action-left">
-            <button 
-              className="side-action-btn"
-              onClick={() => {
-                if (user) {
-                  setCurrentPage('booking');
-                } else {
-                  setAuthModalMode('login');
-                  setAuthModalOpen(true);
-                }
-              }}
-              title={user ? 'Đặt lịch ngay' : 'Đăng nhập để đặt lịch'}
-            >
-              <span className="side-action-icon">📅</span>
-              <span className="side-action-text">Đặt lịch ngay</span>
-            </button>
-          </div>
-          
-          <div className="side-action-right">
-            <a 
-              className="side-action-btn"
-              href="tel:0123456789"
-              title="Gọi ngay: 0123 456 789"
-            >
-              <span className="side-action-icon">📞</span>
-              <span className="side-action-text">Gọi ngay</span>
-            </a>
-          </div>
-        </div>
-
-        {/* Slider Indicators */}
-        <div className="hero-indicators">
-          {images.map((_, index) => (
-            <button
-              key={index}
-              className={`indicator ${index === currentSlide ? 'active' : ''}`}
-              onClick={() => setCurrentSlide(index)}
-            />
-          ))}
-        </div>
-      </section>
-    );
-  };
-
-  // Features Section
-  const FeaturesSection = () => (
-    <section className="features">
-      <div className="container">
-        <h2 className="section-title">TÍNH NĂNG NỔI BẬT</h2>
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feature-icon">📅</div>
-            <h3>Đặt lịch khám thông minh</h3>
-            <p>Đặt lịch khám theo chuyên khoa và bác sĩ, tự động kiểm tra khung giờ trống</p>
-            <button 
-              className="feature-btn"
-              onClick={() => setCurrentPage('booking')}
-            >
-              Trải nghiệm
-            </button>
-          </div>
-          
-          <div className="feature-card">
-            <div className="feature-icon">📱</div>
-            <h3>QR Code Check-in</h3>
-            <p>Check-in nhanh chóng bằng mã QR, giảm thời gian chờ đợi tại quầy lễ tân</p>
-            <button 
-              className="feature-btn"
-              onClick={() => setCurrentPage('qr-checkin')}
-            >
-              Xem demo
-            </button>
-          </div>
-          
-          <div className="feature-card">
-            <div className="feature-icon">📋</div>
-            <h3>Hồ sơ y tế điện tử</h3>
-            <p>Quản lý lịch sử khám bệnh, đơn thuốc và kết quả xét nghiệm tập trung</p>
-            <button 
-              className="feature-btn"
-              onClick={() => setCurrentPage('medical-records')}
-            >
-              Xem hồ sơ
-            </button>
-          </div>
-          
-          <div className="feature-card">
-            <div className="feature-icon">🤖</div>
-            <h3>Gợi ý lịch khám AI</h3>
-            <p>Hệ thống AI gợi ý chuyên khoa và thời điểm tái khám phù hợp</p>
-            <button 
-              className="feature-btn"
-              onClick={() => setCurrentPage('smart-booking')}
-            >
-              Dùng thử AI
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-
-  // Call to Action Section
-  const CTASection = () => (
-    <section className="cta-section">
-      <div className="container">
-        <div className="cta-content">
-          <button 
-            className="btn btn-primary btn-large"
-            onClick={() => {
-              if (user) {
-                setCurrentPage('booking');
-              } else {
-                setAuthModalMode('login');
-                setAuthModalOpen(true);
-              }
-            }}
-          >
-            {user ? 'Đặt lịch ngay' : 'Đăng nhập để đặt lịch'}
-          </button>
-        </div>
-      </div>
-    </section>
-  );
 
   // Footer
   const Footer = () => (
@@ -376,7 +343,50 @@ function AppContent() {
     </footer>
   );
 
+  // Lobby queue screen: full page without the app chrome; public so a TV needs no login
+  if (currentPage === 'queue-board') {
+    return <QueueBoard onExit={user ? () => { setCurrentPage('dashboard'); setNavNonce((n) => n + 1); } : null} />;
+  }
+
   // Render different pages with role-based access control
+  if (currentPage === 'booking-form') {
+    return (
+      <div className="app">
+        <Navigation />
+        <div className="page-content">
+          <BookingPage onNavigate={setCurrentPage} initialSuggestion={bookingSuggestion} prefill={pageData?.prefill} />
+        </div>
+        <Footer />
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          initialMode={authModalMode}
+        />
+      </div>
+    );
+  }
+
+  // Public doctor / specialty search; "Đặt lịch" opens the booking form pre-filled
+  if (currentPage === 'doctors') {
+    return (
+      <div className="app">
+        <Navigation />
+        <div className="page-content">
+          <DoctorDirectory
+            key={`${pageData?.query || ''}|${pageData?.departmentId || ''}`}
+            initialQuery={pageData?.query || ""}
+            initialDepartmentId={pageData?.departmentId ? String(pageData.departmentId) : ''}
+            onBook={(prefill) => {
+              setPageData({ prefill });
+              setCurrentPage(user && user.role === 'doctor' ? 'dashboard' : 'booking');
+            }}
+          />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   if (currentPage === 'booking') {
     // Only Doctor cannot access booking (they don't book appointments, they treat patients)
     if (user && user.role === 'doctor') {
@@ -405,10 +415,9 @@ function AppContent() {
       <div className="app">
         <Navigation />
         <div className="page-content">
-          <BookingPage onNavigate={setCurrentPage} />
+          <BookingPage onNavigate={setCurrentPage} initialSuggestion={bookingSuggestion} prefill={pageData?.prefill} />
         </div>
         <Footer />
-        {/* Auth Modal */}
         <AuthModal
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
@@ -427,13 +436,15 @@ function AppContent() {
       return null;
     }
 
-    // All authenticated users can access medical records
-    // But they see different things based on their role
+    // Patients see their own history; staff get a patient lookup
+    // (the patient-history API is patient-only, so staff used to get a 403 here)
     return (
       <div className="app">
         <Navigation />
         <div className="page-content">
-          {selectedRecordId ? (
+          {user.role !== 'patient' ? (
+            <PatientRecordsLookup />
+          ) : selectedRecordId ? (
             <MedicalRecordDetails
               medicalRecordId={selectedRecordId}
               onBack={() => setSelectedRecordId(null)}
@@ -445,7 +456,6 @@ function AppContent() {
           )}
         </div>
         <Footer />
-        {/* Auth Modal */}
         <AuthModal
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
@@ -472,32 +482,6 @@ function AppContent() {
           <MyQRCode />
         </div>
         <Footer />
-        {/* Auth Modal */}
-        <AuthModal
-          isOpen={authModalOpen}
-          onClose={() => setAuthModalOpen(false)}
-          initialMode={authModalMode}
-        />
-      </div>
-    );
-  }
-
-  if (currentPage === 'smart-booking') {
-    // Smart AI booking suggestion (available to all users)
-    return (
-      <div className="app">
-        <Navigation />
-        <div className="page-content">
-          <SmartBookingSuggestion 
-            onBookAppointment={(data) => {
-              console.log('Booking data:', data);
-              setCurrentPage('booking');
-            }}
-            onClose={() => setCurrentPage('home')}
-          />
-        </div>
-        <Footer />
-        {/* Auth Modal */}
         <AuthModal
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
@@ -524,7 +508,6 @@ function AppContent() {
           <QRScanner />
         </div>
         <Footer />
-        {/* Auth Modal */}
         <AuthModal
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
@@ -550,7 +533,6 @@ function AppContent() {
           <ProfileManager />
         </div>
         <Footer />
-        {/* Auth Modal */}
         <AuthModal
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
@@ -566,7 +548,8 @@ function AppContent() {
         <Navigation />
         <div className="page-content">
           <ProtectedRoute>
-            <DashboardRouter 
+            <DashboardRouter
+              key={navNonce} 
               onNavigate={(page, data) => {
                 setCurrentPage(page);
                 setPageData(data);
@@ -575,7 +558,6 @@ function AppContent() {
           </ProtectedRoute>
         </div>
         <Footer />
-        {/* Auth Modal */}
         <AuthModal
           isOpen={authModalOpen}
           onClose={() => setAuthModalOpen(false)}
@@ -585,7 +567,6 @@ function AppContent() {
     );
   }
 
-  // Doctor Medical Records view (for specific patient)
   if (currentPage === 'create-medical-record') {
     if (!user || user.role !== 'doctor') {
       setCurrentPage('dashboard');
@@ -596,13 +577,11 @@ function AppContent() {
       <div className="app">
         <Navigation />
         <div className="page-content">
-          <SaveMedicalRecord 
+          <DoctorExamFlow
+            key={pageData?.patient?.appointment_id || 'select'}
             patient={pageData?.patient}
-            onClose={() => setCurrentPage('dashboard')}
-            onSaved={() => {
-              alert('Lưu hồ sơ thành công!');
-              setCurrentPage('dashboard');
-            }}
+            onExit={() => setCurrentPage(pageData?.from === 'doctor-queue' ? 'doctor-queue' : 'dashboard')}
+            onNextPatient={pageData?.from === 'doctor-queue' ? () => setCurrentPage('doctor-queue') : undefined}
           />
         </div>
         <Footer />
@@ -679,7 +658,7 @@ function AppContent() {
                 marginBottom: '20px',
                 padding: '10px 20px',
                 background: 'white',
-                border: '2px solid #0ea5e9',
+                border: '2px solid #26a69a',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 fontWeight: 600
@@ -687,14 +666,10 @@ function AppContent() {
             >
               ← Quay lại Dashboard
             </button>
-            <MedicalHistory
-              patientId={pageData?.patientId}
-              records={pageData?.records}
-              onViewDetails={(id) => {
-                setSelectedRecordId(id);
-                setCurrentPage('medical-record-details');
-                setPageData({ recordId: id });
-              }}
+            {/* MedicalHistory only loads the logged-in patient's own history (403 for staff) */}
+            <PatientRecordsLookup
+              key={pageData?.patient?.id || 'lookup'}
+              initialPatient={pageData?.patient || null}
             />
           </div>
         </div>
@@ -738,6 +713,41 @@ function AppContent() {
     );
   }
 
+  if (currentPage === 'appointment-management') {
+    // Admin (full) and receptionist (view list, no audit logs) can access appointment management
+    if (!user || !['admin', 'receptionist'].includes(user.role)) {
+      return (
+        <div className="app">
+          <Navigation />
+          <div className="page-content">
+            <div className="container">
+              <div className="access-denied">
+                <div className="access-denied-icon">🚫</div>
+                <h2>Không có quyền truy cập</h2>
+                <p>Bạn không có quyền truy cập trang này.</p>
+                <p>Chỉ quản trị viên mới có thể quản lý lịch hẹn.</p>
+                <button className="btn btn-primary" onClick={() => setCurrentPage('dashboard')}>
+                  Về Dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+          <Footer />
+        </div>
+      );
+    }
+
+    return (
+      <div className="app">
+        <Navigation />
+        <div className="page-content">
+          <AdminAppointments onNavigate={(page) => setCurrentPage(page)} initialFilters={pageData?.filters} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   if (currentPage === 'appointment-history') {
     // Check if user is authenticated
     if (!user) {
@@ -751,7 +761,7 @@ function AppContent() {
       <div className="app">
         <Navigation />
         <div className="page-content">
-          <AppointmentHistory onBack={() => setCurrentPage('dashboard')} />
+          <AppointmentHistory onBack={() => setCurrentPage('dashboard')} initialFilter={pageData?.filter} />
         </div>
         <Footer />
       </div>
@@ -769,13 +779,141 @@ function AppContent() {
       <div className="app">
         <Navigation />
         <div className="page-content">
-          <SaveMedicalRecord 
-            onClose={() => setCurrentPage('dashboard')}
-            onSaved={() => {
-              alert('Lưu hồ sơ thành công!');
-              setCurrentPage('dashboard');
-            }}
-          />
+          <DoctorExamFlow onExit={() => setCurrentPage('dashboard')} />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (currentPage === 'payment-history') {
+    // Only patients can view their payment history
+    if (!user || user.role !== 'patient') {
+      setCurrentPage('dashboard');
+      return null;
+    }
+
+    return (
+      <div className="app">
+        <Navigation />
+        <div className="page-content">
+          <PaymentHistory />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (currentPage === 'cashier' || currentPage === 'payment-management') {
+    const allowed = currentPage === 'cashier' ? ['receptionist', 'admin'] : ['admin'];
+    if (!user || !allowed.includes(user.role)) {
+      return (
+        <div className="app">
+          <Navigation />
+          <div className="page-content">
+            <div className="container">
+              <div className="access-denied">
+                <div className="access-denied-icon">🚫</div>
+                <h2>Không có quyền truy cập</h2>
+                <p>Bạn không có quyền truy cập trang này.</p>
+                <button className="btn btn-primary" onClick={() => setCurrentPage(user ? 'dashboard' : 'home')}>
+                  {user ? 'Về Dashboard' : 'Về trang chủ'}
+                </button>
+              </div>
+            </div>
+          </div>
+          <Footer />
+        </div>
+      );
+    }
+
+    return (
+      <div className="app">
+        <Navigation />
+        <div className="page-content">
+          {currentPage === 'cashier'
+            ? <CashierDesk onBack={() => setCurrentPage('dashboard')} />
+            : <PaymentManagement onBack={() => setCurrentPage('dashboard')} />}
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Pages opened from dashboard cards (they used to fall through to the home page)
+  const roleRoutes = {
+    'doctor-queue': {
+      roles: ['doctor'],
+      render: () => (
+        <DoctorQueue
+          onStartExam={(patient) => { setPageData({ patient, from: 'doctor-queue' }); setCurrentPage('create-medical-record'); }}
+          onOpenBoard={() => setCurrentPage('queue-board')}
+        />
+      )
+    },
+    'doctor-patients': { roles: ['doctor'], render: () => <PatientRecordsLookup /> },
+    'doctor-ratings': {
+      roles: ['doctor', 'admin'],
+      render: () => <DoctorRatings role={user.role} onBack={() => setCurrentPage('dashboard')} />
+    },
+    'doctor-leaves': {
+      roles: ['doctor', 'admin', 'receptionist'],
+      render: () => <DoctorLeaves role={user.role} onBack={() => setCurrentPage('dashboard')} />
+    },
+    'doctor-follow-ups': {
+      roles: ['doctor'],
+      render: () => <DoctorFollowUps onBack={() => setCurrentPage('dashboard')} />
+    },
+    'doctor-schedule': {
+      roles: ['doctor'],
+      render: () => <DoctorSchedule onBack={() => setCurrentPage('dashboard')} />
+    },
+    'admin-statistics': {
+      roles: ['admin'],
+      render: () => <AdminStatistics onBack={() => setCurrentPage('dashboard')} />
+    },
+    'doctor-management': {
+      roles: ['admin'],
+      render: () => <ClinicCatalog initialTab="doctors" onBack={() => setCurrentPage('dashboard')} onNavigate={setCurrentPage} />
+    },
+    'department-management': {
+      roles: ['admin'],
+      render: () => <ClinicCatalog initialTab="departments" onBack={() => setCurrentPage('dashboard')} onNavigate={setCurrentPage} />
+    },
+    'recommendation-settings': {
+      roles: ['admin'],
+      render: () => <RecommendationSettings onBack={() => setCurrentPage('dashboard')} />
+    },
+    'doctor-shifts': {
+      roles: ['admin'],
+      render: () => <DoctorShifts onBack={() => setCurrentPage('dashboard')} />
+    },
+    'medicine-management': {
+      roles: ['admin'],
+      render: () => <MedicineCatalog onBack={() => setCurrentPage('dashboard')} />
+    },
+    'security-monitoring': { roles: ['admin'], render: () => <SecurityDashboard /> }
+  };
+
+  if (roleRoutes[currentPage]) {
+    const route = roleRoutes[currentPage];
+    const allowed = user && route.roles.includes(user.role);
+    return (
+      <div className="app">
+        <Navigation />
+        <div className="page-content">
+          {allowed ? route.render() : (
+            <div className="container">
+              <div className="access-denied">
+                <div className="access-denied-icon">🚫</div>
+                <h2>Không có quyền truy cập</h2>
+                <p>Bạn không có quyền truy cập trang này.</p>
+                <button className="btn btn-primary" onClick={() => setCurrentPage(user ? 'dashboard' : 'home')}>
+                  {user ? 'Về Dashboard' : 'Về trang chủ'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         <Footer />
       </div>
@@ -786,9 +924,11 @@ function AppContent() {
   return (
     <div className="app">
       <Navigation />
-      <HeroSection />
-      <FeaturesSection />
-      <CTASection />
+      <HomeStore
+        user={user}
+        onNavigate={(page, data = null) => { setCurrentPage(page); setPageData(data); setNavNonce((n) => n + 1); }}
+        onBook={(prefill) => { setPageData({ prefill }); setCurrentPage('booking'); }}
+      />
       <Footer />
       {/* Auth Modal */}
       <AuthModal
@@ -796,6 +936,14 @@ function AppContent() {
         onClose={() => setAuthModalOpen(false)}
         initialMode={authModalMode}
       />
+      {/* Booking Modal */}
+      {bookingModalOpen && (
+        <div className="modal-overlay" onClick={() => setBookingModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <SimpleBookingForm isModal={true} onClose={() => setBookingModalOpen(false)} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

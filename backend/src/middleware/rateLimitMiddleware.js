@@ -1,4 +1,13 @@
 const rateLimit = require('express-rate-limit');
+const { MemoryStore } = require('express-rate-limit');
+
+// One explicit store per limiter so all counters can be cleared (tests use resetRateLimitStores)
+const limiterStores = [];
+const newStore = () => {
+  const store = new MemoryStore();
+  limiterStores.push(store);
+  return store;
+};
 
 /**
  * Rate Limiting Middleware for THCT Clinic Authentication System
@@ -86,12 +95,26 @@ const rateLimitHandler = (req, res, next, options) => {
  * - Skips successful requests (doesn't count against limit)
  * - Applies to: /api/auth/login, /api/auth/register, /api/auth/forgot-password
  */
+/**
+ * Failed sign-ins allowed per IP in 15 minutes.
+ * - production: 5 (brute-force protection)
+ * - development (npm run dev): 1000 so developers/testers are never locked out while testing
+ * - test (jest): 5, the value the test suite checks
+ * Override with AUTH_RATE_LIMIT_MAX=<n> in backend/.env.
+ */
+const AUTH_MAX = (() => {
+  const fromEnv = parseInt(process.env.AUTH_RATE_LIMIT_MAX, 10);
+  if (Number.isInteger(fromEnv) && fromEnv > 0) return fromEnv;
+  return ['production', 'test'].includes(process.env.NODE_ENV) ? 5 : 1000;
+})();
+
 const authRateLimit = rateLimit({
+  store: newStore(),
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 requests per windowMs
+  max: AUTH_MAX,
   message: createRateLimitMessage({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: AUTH_MAX,
     type: 'authentication attempts'
   }),
   
@@ -109,8 +132,6 @@ const authRateLimit = rateLimit({
     });
   },
   
-  // Use default IP handling (no custom keyGenerator to avoid IPv6 issues)
-  
   // Headers to include in response
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers (we set custom ones)
@@ -127,6 +148,7 @@ const authRateLimit = rateLimit({
  * - More lenient than auth limiter
  */
 const globalRateLimit = rateLimit({
+  store: newStore(),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // Limit each IP to 1000 requests per windowMs
   message: createRateLimitMessage({
@@ -161,6 +183,7 @@ const globalRateLimit = rateLimit({
  * - Can be applied dynamically to specific IPs
  */
 const suspiciousActivityRateLimit = rateLimit({
+  store: newStore(),
   windowMs: 5 * 60 * 1000, // 5 minutes
   max: 10, // Limit to 10 requests per 5 minutes
   message: createRateLimitMessage({
@@ -201,12 +224,21 @@ const suspiciousActivityRateLimit = rateLimit({
  * - 3 attempts per hour per IP
  * - Prevents password reset spam
  */
+// forgot + reset requests per IP per hour (a normal reset already takes 2 requests)
+const RESET_MAX = (() => {
+  const fromEnv = parseInt(process.env.PASSWORD_RESET_RATE_LIMIT_MAX, 10);
+  if (Number.isInteger(fromEnv) && fromEnv > 0) return fromEnv;
+  if (process.env.NODE_ENV === 'test') return 3;
+  return process.env.NODE_ENV === 'production' ? 10 : 1000;
+})();
+
 const passwordResetRateLimit = rateLimit({
+  store: newStore(),
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // Limit to 3 password reset attempts per hour
+  max: RESET_MAX,
   message: createRateLimitMessage({
     windowMs: 60 * 60 * 1000,
-    max: 3,
+    max: RESET_MAX,
     type: 'password reset attempts'
   }),
   
@@ -233,6 +265,7 @@ const passwordResetRateLimit = rateLimit({
  * - Prevents spam registrations
  */
 const registrationRateLimit = rateLimit({
+  store: newStore(),
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 3, // Limit to 3 registration attempts per hour
   message: createRateLimitMessage({
@@ -400,7 +433,16 @@ const rateLimitInfoMiddleware = (req, res, next) => {
   next();
 };
 
+/**
+ * Clear every limiter counter (test isolation).
+ */
+const resetRateLimitStores = async () => {
+  await Promise.all(limiterStores.map(store => (store.resetAll ? store.resetAll() : null)));
+};
+
 module.exports = {
+  resetRateLimitStores,
+
   // Primary rate limiters
   authRateLimit,
   globalRateLimit,

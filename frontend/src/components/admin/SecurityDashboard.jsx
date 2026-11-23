@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import './SecurityDashboard.css';
+import { API_BASE } from '../../config/api';
 
 /**
  * SecurityDashboard Component
@@ -16,7 +16,6 @@ import './SecurityDashboard.css';
  * Requirements Validation: 10.6 - Admin security dashboard for monitoring
  */
 const SecurityDashboard = () => {
-  const { token } = useAuth();
   const [loading, setLoading] = useState(true);
   const [auditLogs, setAuditLogs] = useState([]);
   const [statistics, setStatistics] = useState({
@@ -27,6 +26,47 @@ const SecurityDashboard = () => {
   });
   const [timeRange, setTimeRange] = useState('24h'); // 24h, 7d, 30d
   const [error, setError] = useState(null);
+  const [lockedAccounts, setLockedAccounts] = useState([]);
+  const [unlockingId, setUnlockingId] = useState(null);
+  const [notice, setNotice] = useState(null);
+
+  const authHeaders = () => ({ 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` });
+
+  const fetchLockedAccounts = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/locked-accounts`, { headers: authHeaders() });
+      if (res.ok) {
+        const json = await res.json();
+        setLockedAccounts(json.data || []);
+      }
+    } catch (e) {
+      // section simply stays empty
+    }
+  };
+
+  const handleUnlock = async (account) => {
+    try {
+      setUnlockingId(account.user_id);
+      setNotice(null);
+      const res = await fetch(`${API_BASE}/admin/unlock-account/${account.user_id}`, {
+        method: 'POST',
+        headers: authHeaders()
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error?.message || 'Không thể mở khoá tài khoản');
+      setNotice({ type: 'success', text: `Đã mở khoá tài khoản ${account.email}` });
+      fetchLockedAccounts();
+      fetchSecurityData();
+    } catch (e) {
+      setNotice({ type: 'error', text: e.message });
+    } finally {
+      setUnlockingId(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchLockedAccounts();
+  }, []);
 
   useEffect(() => {
     fetchSecurityData();
@@ -37,8 +77,12 @@ const SecurityDashboard = () => {
       setLoading(true);
       setError(null);
 
+      // Absolute API URL: a relative '/api/...' hit the React dev server (no proxy) and got HTML back.
+      // useAuth() does not expose the token, so read it from storage like the rest of the app.
+      const token = localStorage.getItem('auth_token');
+
       // Fetch audit logs
-      const logsResponse = await fetch('/api/admin/audit-logs', {
+      const logsResponse = await fetch(`${API_BASE}/admin/audit-logs`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -50,7 +94,7 @@ const SecurityDashboard = () => {
       }
 
       // Fetch statistics
-      const statsResponse = await fetch('/api/admin/security-statistics', {
+      const statsResponse = await fetch(`${API_BASE}/admin/security-statistics`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -207,6 +251,65 @@ const SecurityDashboard = () => {
             <div className="stat-label">Hoạt động đáng ngờ</div>
           </div>
         </div>
+      </div>
+
+      {/* Locked accounts */}
+      <div className="audit-logs-section">
+        <h3>🔒 Tài khoản đang bị khoá</h3>
+        {notice && (
+          <div
+            role="status"
+            style={{
+              margin: '0 0 12px',
+              padding: '10px 14px',
+              borderRadius: 8,
+              background: notice.type === 'success' ? '#ecfdf5' : '#fef2f2',
+              color: notice.type === 'success' ? '#065f46' : '#991b1b'
+            }}
+          >
+            {notice.text}
+          </div>
+        )}
+        {lockedAccounts.length === 0 ? (
+          <div className="no-data">
+            <p>Không có tài khoản nào đang bị khoá</p>
+          </div>
+        ) : (
+          <div className="audit-table-container">
+            <table className="audit-table">
+              <thead>
+                <tr>
+                  <th>Người dùng</th>
+                  <th>Email</th>
+                  <th>Vai trò</th>
+                  <th>Số lần sai</th>
+                  <th>Khoá đến</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {lockedAccounts.map((acc) => (
+                  <tr key={acc.user_id}>
+                    <td>{acc.full_name}</td>
+                    <td>{acc.email}</td>
+                    <td>{acc.role}</td>
+                    <td>{acc.login_attempts}</td>
+                    <td>{formatTimestamp(acc.locked_until)}</td>
+                    <td>
+                      <button
+                        className="btn-refresh"
+                        onClick={() => handleUnlock(acc)}
+                        disabled={unlockingId === acc.user_id}
+                      >
+                        {unlockingId === acc.user_id ? 'Đang mở…' : '🔓 Mở khoá'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Audit Logs Table */}

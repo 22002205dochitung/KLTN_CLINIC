@@ -59,9 +59,9 @@
 }
 
 .filter-tabs button.active {
-  background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%);
+  background: linear-gradient(135deg, #b9ece5 0%, #4682B4 100%);
   color: white;
-  border-color: #87CEEB;
+  border-color: #b9ece5;
 }
 
 .loading {
@@ -196,4 +196,50 @@
   .info-row .label {
     min-width: auto;
   }
+}
+
+/* Let the date picker popover overflow the card while it is open */
+.appointment-card:has(.calp-popover) {
+  overflow: visible;
+}
+
+/* VietQR panel under an appointment */
+.transfer-wrap {
+  border-top: 1px solid #e2e8f0;
+  padding: 0 16px;
+}
+
+/* Phones: use the full width (nested paddings squeezed the payment panel to ~160px) */
+@media (max-width: 480px) {
+  .appointment-history-container {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .card-header,
+  .card-body {
+    padding: 1rem;
+  }
+
+  .card-footer {
+    padding: 0.75rem 1rem;
+  }
+
+  .transfer-wrap {
+    padding: 0 6px;
+  }
+
+  .info-row {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+}
+
+/* Remaining places under a time slot (each slot takes several patients) */
+.slot-remaining {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  color: #108578;
 }

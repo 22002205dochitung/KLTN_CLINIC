@@ -14,7 +14,7 @@
 }
 
 .scanner-header {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   padding: 40px;
   text-align: center;
   color: white;
@@ -67,7 +67,7 @@
 
 /* QR Reader Container */
 .qr-reader-container {
-  max-width: 500px;
+  max-width: 640px;
   margin: 0 auto;
   border-radius: 16px;
   overflow: hidden;
@@ -90,9 +90,14 @@
   border-radius: 16px !important;
 }
 
+/* front camera shown like a mirror (display only – decoding uses the original frames) */
+#qr-reader.is-mirrored video {
+  transform: scaleX(-1);
+}
+
 .scanner-video {
   width: 100%;
-  max-width: 500px;
+  max-width: 640px;
   border-radius: 16px;
   background: #000;
 }
@@ -160,8 +165,8 @@
 
 .input-group .form-control:focus {
   outline: none;
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+  border-color: #26a69a;
+  box-shadow: 0 0 0 3px rgba(38, 166, 154, 0.1);
 }
 
 .input-group .btn {
@@ -344,13 +349,13 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+  box-shadow: 0 6px 20px rgba(38, 166, 154, 0.4);
 }
 
 .btn-primary:disabled {
@@ -471,7 +476,7 @@
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  background: linear-gradient(135deg, #26a69a 0%, #108578 100%);
   color: white;
   padding: 24px 32px;
   border-radius: 20px 20px 0 0;
@@ -540,7 +545,7 @@
 
 .qr-code-display {
   background: #f7fafc;
-  border: 2px solid #0ea5e9;
+  border: 2px solid #26a69a;
   border-radius: 12px;
   padding: 20px;
   margin: 0 auto;
@@ -550,7 +555,7 @@
 .qr-code-display code {
   font-size: 18px;
   font-weight: 700;
-  color: #0ea5e9;
+  color: #26a69a;
   font-family: 'Courier New', monospace;
   letter-spacing: 1px;
   word-break: break-all;
@@ -601,4 +606,278 @@
 
 .modal-footer .btn {
   min-width: 150px;
+}
+
+/* Ticket number given at check-in */
+.ticket-box {
+  margin: 12px auto 18px;
+  max-width: 320px;
+  padding: 14px 18px;
+  border: 2px dashed #108578;
+  border-radius: 16px;
+  background: #f1faf8;
+  text-align: center;
+}
+
+.ticket-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #108578;
+}
+
+.ticket-number {
+  font-size: 72px;
+  font-weight: 900;
+  line-height: 1.05;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticket-room {
+  display: inline-block;
+  margin: 4px 0 6px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: #108578;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.ticket-note {
+  font-size: 14px;
+  color: #334155;
+}
+
+/* ---------- Check-in result (full screen, readable from the patient's side of the desk) ---------- */
+.ck-sound {
+  order: 1;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ck-sound.is-on {
+  border-color: var(--brand, #108578);
+  color: var(--brand, #108578);
+  background: var(--brand-50, #f1faf8);
+}
+
+.ck-spinner {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 10px;
+  border: 4px solid var(--brand-100, #d9f5f0);
+  border-top-color: var(--brand, #108578);
+  border-radius: 50%;
+  animation: ck-spin 0.8s linear infinite;
+}
+
+@keyframes ck-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ck-result {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.55);
+  animation: ck-fade 0.15s ease-out;
+}
+
+@keyframes ck-fade {
+  from { opacity: 0; }
+}
+
+.ck-result-box {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 30px 28px 24px;
+  border-radius: 22px;
+  background: #fff;
+  border-top: 10px solid var(--ck-color);
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.35);
+  animation: ck-pop 0.22s ease-out;
+}
+
+@keyframes ck-pop {
+  from { transform: scale(0.92); }
+}
+
+.ck-result.is-ok { --ck-color: #16a34a; --ck-soft: #dcfce7; }
+.ck-result.is-already { --ck-color: #d97706; --ck-soft: #fef3c7; }
+.ck-result.is-fail { --ck-color: #dc2626; --ck-soft: #fee2e2; }
+
+.ck-result.is-fail .ck-result-box {
+  animation: ck-shake 0.4s ease-in-out;
+}
+
+@keyframes ck-shake {
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.ck-result-icon {
+  display: grid;
+  place-items: center;
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: var(--ck-soft);
+  color: var(--ck-color);
+  font-size: 54px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ck-result-box h2 {
+  margin: 0;
+  color: var(--ck-color);
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 800;
+}
+
+.ck-result-name {
+  margin-top: 6px;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.ck-result-ticket {
+  display: grid;
+  gap: 2px;
+  margin: 16px auto 4px;
+  padding: 12px 18px;
+  width: fit-content;
+  min-width: 220px;
+  border-radius: 16px;
+  background: var(--ck-soft);
+}
+
+.ck-result-ticket span {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.ck-result-ticket strong {
+  color: var(--ck-color);
+  font-size: 76px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.ck-result-ticket em {
+  color: #0f172a;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ck-result-reason {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--ck-soft);
+  color: #7f1d1d;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ck-result-msg {
+  margin: 14px 0 0;
+  color: #1e293b;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.ck-result-btn {
+  margin-top: 20px;
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 12px;
+  background: var(--ck-color);
+  color: #fff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ck-result-btn:hover {
+  filter: brightness(0.95);
+}
+
+.ck-history {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.ck-history-title {
+  color: #334155;
+  font-size: 14px;
+}
+
+.ck-history ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.ck-history li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 14px;
+}
+
+.ck-history-time {
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.ck-history-name {
+  flex: 1;
+  min-width: 0;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.ck-history-no {
+  color: var(--brand, #108578);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ck-result-code {
+  margin-top: 4px;
+  color: #334155;
+  font-size: 15px;
+}
+
+.ck-result-code b {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  letter-spacing: 0.5px;
 }

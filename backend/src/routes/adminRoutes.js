@@ -29,7 +29,22 @@ const { verifyToken, requireRole } = require('../middleware/authMiddleware');
 
 // Apply authentication and admin role check to all routes
 router.use(verifyToken);
+
+// Read-only appointment list is shared with receptionists (front-desk work)
+router.get('/appointments', requireRole(['admin', 'receptionist']), adminController.getAllAppointments);
+
+// Everything below is admin-only
 router.use(requireRole(['admin']));
+
+// Edit / delete appointments
+router.put('/appointments/:id', adminController.updateAppointment);
+router.delete('/appointments/:id', adminController.deleteAppointment);
+
+// Dashboard statistics
+router.get('/dashboard-stats', adminController.getDashboardStats);
+
+// CSV reports for Excel (appointments / revenue over a date range)
+router.get('/reports/export', adminController.exportReport);
 
 // Department management (Requirements 16.1-16.7)
 router.get('/departments', adminController.getDepartments);

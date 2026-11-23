@@ -1,0 +1,81 @@
+.install-banner {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
+  animation: install-up 0.25s ease-out;
+}
+
+@keyframes install-up {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .install-banner { animation: none; }
+}
+
+.install-banner-icon {
+  flex: 0 0 auto;
+  border-radius: 12px;
+}
+
+.install-banner-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #475569;
+}
+
+.install-banner-text strong {
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.install-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.install-banner-btn {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 10px;
+  background: #108578;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.install-banner-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.install-banner-btn:focus-visible,
+.install-banner-close:focus-visible {
+  outline: 2px solid #108578;
+  outline-offset: 2px;
+}
